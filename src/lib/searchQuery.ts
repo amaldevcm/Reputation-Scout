@@ -7,6 +7,7 @@ const SOURCE_SITE_HINTS: Record<string, string> = {
   reddit: "site:reddit.com",
   linkedin: "site:linkedin.com",
   google_reviews: "google reviews",
+  sitejabber: "site:sitejabber.com",
 };
 
 export function buildQuery(

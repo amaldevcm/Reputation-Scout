@@ -4,29 +4,23 @@ import * as cheerio from "cheerio";
 import { throttleHost, hostnameOf } from "./throttle.js";
 import { getCached, setCached } from "./pageCache.js";
 import { MAX_FETCH_RETRIES } from "./config.js";
+import { DEFAULT_UA, isBotChecked } from "./httpFetch.js";
 
 export type FetchOutcome =
   | { kind: "ok"; text: string }
   | { kind: "blocked"; reason: string }
   | { kind: "failed"; reason: string }
-  | { kind: "parse_error"; reason: string };
-
-const BOT_CHECK_MARKERS = [
-  "captcha",
-  "are you a human",
-  "access denied",
-  "unusual traffic",
-  "verify you are a human",
-  "cloudflare",
-];
+  | { kind: "parse_error"; reason: string }
+  // A clean 404 on a directly-guessed/direct-resolved URL: the company has
+  // no presence at that address, distinct from a transient or blocking
+  // failure — callers resolving direct URLs (rather than search results)
+  // should treat this as "no results", not "failed".
+  | { kind: "not_found" };
 
 async function fetchOnce(url: string): Promise<{ status: number; body: string } | { error: string }> {
   try {
     const res = await fetch(url, {
-      headers: {
-        "User-Agent":
-          "Mozilla/5.0 (compatible; reputation-scout/0.1; +https://www.npmjs.com/package/reputation-scout)",
-      },
+      headers: { "User-Agent": DEFAULT_UA },
     });
     const body = await res.text();
     return { status: res.status, body };
@@ -85,8 +79,7 @@ export async function fetchPage(url: string): Promise<FetchOutcome> {
       return { kind: "blocked", reason: `HTTP ${result.status}` };
     }
 
-    const lowerBody = result.body.slice(0, 5000).toLowerCase();
-    if (BOT_CHECK_MARKERS.some((marker) => lowerBody.includes(marker))) {
+    if (isBotChecked(result.body)) {
       return { kind: "blocked", reason: "bot-check markers detected" };
     }
 
@@ -97,6 +90,10 @@ export async function fetchPage(url: string): Promise<FetchOutcome> {
         continue;
       }
       return { kind: "failed", reason: lastError };
+    }
+
+    if (result.status === 404) {
+      return { kind: "not_found" };
     }
 
     if (result.status >= 400) {

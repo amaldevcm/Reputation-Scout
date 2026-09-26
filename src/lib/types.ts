@@ -56,6 +56,7 @@ export const DEFAULT_SOURCES = [
   "reddit",
   "linkedin",
   "google_reviews",
+  "sitejabber",
 ] as const;
 
 export type DefaultSource = (typeof DEFAULT_SOURCES)[number];

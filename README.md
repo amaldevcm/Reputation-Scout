@@ -2,7 +2,7 @@
 
 Reputation Scout is a multi-agent-orchestrated company-reputation research tool, built as an MCP (Model Context Protocol) server so it can be plugged into any MCP-compatible coding agent (Claude Code, Cursor, etc.).
 
-Given a company name, it searches multiple review sources (Glassdoor, Indeed, Clutch, G2, BBB, Reddit, LinkedIn, Google Reviews by default), consolidates findings into a Markdown report, and tracks progress so a long run can survive context compaction or an interrupted session.
+Given a company name, it searches multiple review sources (Glassdoor, Indeed, Clutch, G2, BBB, Reddit, LinkedIn, Google Reviews, SiteJabber by default), consolidates findings into a Markdown report, and tracks progress so a long run can survive context compaction or an interrupted session.
 
 ## Status
 
@@ -15,7 +15,7 @@ npm install
 npm run build
 ```
 
-No API key required to get started — search falls back to a key-free DuckDuckGo scrape when `BRAVE_API_KEY` isn't set. Setting a [Brave Search API](https://brave.com/search/api/) key is optional but recommended: it's an official, higher-quality, rate-limit-friendly source, whereas the DuckDuckGo fallback scrapes an unofficial HTML endpoint and is more likely to break or get rate-limited under heavy use.
+No API key required to get started. Two sources (**BBB**, **SiteJabber**) resolve directly via the site's own predictable, plain-fetchable URLs, never touching a search API at all. Everything else falls back to a key-free DuckDuckGo scrape when `BRAVE_API_KEY` isn't set. Setting a [Brave Search API](https://brave.com/search/api/) key is optional but recommended for the remaining sources: as of February 2026 Brave requires a credit card at signup (it's no longer a true no-cost free tier), but it's still a higher-quality, more rate-limit-friendly source than the DuckDuckGo fallback, which scrapes an unofficial endpoint and is prone to being IP-flagged as bot traffic under repeated use.
 
 ## Adding it to a coding agent
 
@@ -38,7 +38,7 @@ For Claude Code: `.claude/mcp.json` or `claude mcp add`. For Cursor: `.cursor/mc
 
 | Tool | Purpose |
 | --- | --- |
-| `search_reviews(company_name, source?, domain?, location?)` | Discover review-page URLs for one source via Brave Search |
+| `search_reviews(company_name, source?, domain?, location?)` | Discover review-page URLs for one source via Brave/DuckDuckGo |
 | `fetch_page(url)` | Fetch a URL and return cleaned/readable text |
 | `research_company(company_name, sources?, domain?, location?, industry_hint?, restart?)` | Orchestrate a full run across sources in parallel |
 | `resume_research(company_name)` | Continue an incomplete run, processing only remaining sources |

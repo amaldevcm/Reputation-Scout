@@ -1,5 +1,6 @@
 import * as cheerio from "cheerio";
-import { throttleHost } from "../throttle.js";
+import { throttleHost, hostnameOf } from "../throttle.js";
+import { DEFAULT_UA, isBotChecked } from "../httpFetch.js";
 import type { SearchProvider, SearchResult } from "./types.js";
 
 /**
@@ -11,8 +12,6 @@ import type { SearchProvider, SearchResult } from "./types.js";
  */
 
 const ENDPOINT = "https://html.duckduckgo.com/html/";
-
-const BOT_CHECK_MARKERS = ["anomaly.js", "cc=botnet", "challenge-form"];
 
 function decodeDdgRedirect(href: string): string {
   // DDG's HTML results wrap outbound links as //duckduckgo.com/l/?uddg=<encoded>&rut=...
@@ -30,17 +29,13 @@ function decodeDdgRedirect(href: string): string {
 export const duckduckgoProvider: SearchProvider = {
   name: "duckduckgo",
   async search(query: string, count = 10): Promise<SearchResult[]> {
-    await throttleHost("html.duckduckgo.com");
+    await throttleHost(hostnameOf(ENDPOINT));
 
-    const url = new URL(ENDPOINT);
-    url.searchParams.set("q", query);
-
-    const res = await fetch(url, {
+    const res = await fetch(ENDPOINT, {
       method: "POST",
       headers: {
         "Content-Type": "application/x-www-form-urlencoded",
-        "User-Agent":
-          "Mozilla/5.0 (compatible; reputation-scout/0.1; +https://www.npmjs.com/package/reputation-scout)",
+        "User-Agent": DEFAULT_UA,
       },
       body: new URLSearchParams({ q: query }).toString(),
     });
@@ -50,8 +45,7 @@ export const duckduckgoProvider: SearchProvider = {
     }
 
     const html = await res.text();
-    const lowerHtml = html.toLowerCase();
-    if (BOT_CHECK_MARKERS.some((marker) => lowerHtml.includes(marker))) {
+    if (isBotChecked(html)) {
       throw new Error(
         "DuckDuckGo returned a bot-check/anomaly page instead of results (unofficial endpoint, no key — this is expected to happen under repeated or heavy use). Set BRAVE_API_KEY to avoid this."
       );
