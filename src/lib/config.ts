@@ -1,6 +1,7 @@
 import path from "node:path";
 
 export const BRAVE_API_KEY = process.env.BRAVE_API_KEY ?? "";
+export const TAVILY_API_KEY = process.env.TAVILY_API_KEY ?? "";
 export const CACHE_DIR = process.env.REPSCOUT_CACHE_DIR ?? path.resolve(".cache");
 export const REPORTS_DIR = process.env.REPSCOUT_REPORTS_DIR ?? path.resolve("reports");
 export const RUNS_DIR = path.join(CACHE_DIR, "runs");

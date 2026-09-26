@@ -15,7 +15,13 @@ npm install
 npm run build
 ```
 
-No API key required to get started. Two sources (**BBB**, **SiteJabber**) resolve directly via the site's own predictable, plain-fetchable URLs, never touching a search API at all. Everything else falls back to a key-free DuckDuckGo scrape when `BRAVE_API_KEY` isn't set. Setting a [Brave Search API](https://brave.com/search/api/) key is optional but recommended for the remaining sources: as of February 2026 Brave requires a credit card at signup (it's no longer a true no-cost free tier), but it's still a higher-quality, more rate-limit-friendly source than the DuckDuckGo fallback, which scrapes an unofficial endpoint and is prone to being IP-flagged as bot traffic under repeated use.
+No API key required to get started. Two sources (**BBB**, **SiteJabber**) resolve directly via the site's own predictable, plain-fetchable URLs, never touching a search API at all. Everything else falls back to a key-free DuckDuckGo scrape when no search API key is set.
+
+For everything else, search picks a provider in this order:
+
+1. **[Tavily](https://tavily.com/)** (`TAVILY_API_KEY`) — recommended. Free tier, 1,000 credits/month, no credit card required.
+2. **[Brave Search](https://brave.com/search/api/)** (`BRAVE_API_KEY`) — supported if you already have a key, but as of February 2026 Brave requires a credit card at signup (no longer a true no-cost free tier).
+3. **DuckDuckGo** (no key) — scrapes an unofficial HTML endpoint; prone to being IP-flagged as bot traffic under repeated use, so treat it as a fallback rather than a reliable default for heavy use.
 
 ## Adding it to a coding agent
 
@@ -30,7 +36,7 @@ No API key required to get started. Two sources (**BBB**, **SiteJabber**) resolv
 }
 ```
 
-To use Brave instead of the DuckDuckGo fallback, add `"env": { "BRAVE_API_KEY": "..." }` to the server entry above.
+To use Tavily or Brave instead of the DuckDuckGo fallback, add `"env": { "TAVILY_API_KEY": "..." }` (or `"BRAVE_API_KEY"`) to the server entry above.
 
 For Claude Code: `.claude/mcp.json` or `claude mcp add`. For Cursor: `.cursor/mcp.json`. Once published to npm (Phase 3), `command`/`args` will switch to `npx -y reputation-scout`.
 
@@ -38,7 +44,7 @@ For Claude Code: `.claude/mcp.json` or `claude mcp add`. For Cursor: `.cursor/mc
 
 | Tool | Purpose |
 | --- | --- |
-| `search_reviews(company_name, source?, domain?, location?)` | Discover review-page URLs for one source via Brave/DuckDuckGo |
+| `search_reviews(company_name, source?, domain?, location?)` | Discover review-page URLs for one source via Tavily/Brave/DuckDuckGo |
 | `fetch_page(url)` | Fetch a URL and return cleaned/readable text |
 | `research_company(company_name, sources?, domain?, location?, industry_hint?, restart?)` | Orchestrate a full run across sources in parallel |
 | `resume_research(company_name)` | Continue an incomplete run, processing only remaining sources |
