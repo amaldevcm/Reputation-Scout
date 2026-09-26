@@ -2,7 +2,8 @@ import fs from "node:fs/promises";
 import path from "node:path";
 import { REPORTS_DIR, MIN_VIABLE_SOURCES } from "./config.js";
 import { redactStructuralPII } from "./redact.js";
-import { summarize } from "./manifest.js";
+import { summarize, overallConfidence } from "./manifest.js";
+import { extractReviewCount, extractRating } from "./extractSignals.js";
 import { todayStamp } from "./slug.js";
 import type { RunManifest } from "./types.js";
 
@@ -15,6 +16,45 @@ export interface SaveReportOptions {
 export interface SaveReportResult {
   path: string;
   warning?: string;
+}
+
+function buildCompanySection(manifest: RunManifest): string {
+  const website = manifest.hints.domain ?? "not provided";
+  const { level, basis } = overallConfidence(manifest);
+
+  return [
+    "## Company",
+    "",
+    `- **Name:** ${manifest.companyName}`,
+    `- **Website:** ${website}`,
+    `- **Overall confidence:** ${level} — ${basis}`,
+  ].join("\n");
+}
+
+function buildSourceSignalsSection(manifest: RunManifest): string {
+  const rows = Object.values(manifest.sources).map((s) => {
+    const combinedText = s.findings.map((f) => f.text).join(" ");
+    const reviewCount = combinedText ? (extractReviewCount(combinedText) ?? "not detected") : "—";
+    const rating = combinedText ? (extractRating(combinedText) ?? "not detected") : "—";
+
+    // Prefer the page an actual finding came from; fall back to the best
+    // candidate the source turned up even if fetching it didn't pan out.
+    const bestPage = s.matchedPages[0];
+    const matchedVia = bestPage ? bestPage.matchedOn.join(", ") : "—";
+    const confidence = bestPage ? bestPage.confidence : "—";
+
+    return `| ${s.source} | ${reviewCount} | ${rating} | ${matchedVia} | ${confidence} |`;
+  });
+
+  return [
+    "## Source signals",
+    "",
+    "| Source | Reviews found | Rating | Matched via | Confidence |",
+    "| --- | --- | --- | --- | --- |",
+    ...rows,
+    "",
+    "_\"Reviews found\" and \"Rating\" are extracted from page text with simple pattern matching and may miss or misread a source's actual formatting — treat as an approximate signal, not an authoritative count. \"—\" means not applicable (no findings from that source); \"not detected\" means findings exist but no count/rating pattern was found in them._",
+  ].join("\n");
 }
 
 function buildSourcesSection(manifest: RunManifest): string {
@@ -86,6 +126,10 @@ export async function saveReport(
     `_Generated ${todayStamp()}._`,
     "",
     disclaimer,
+    buildCompanySection(manifest),
+    "",
+    buildSourceSignalsSection(manifest),
+    "",
     "## Findings",
     "",
     bodyRedacted || "_No findings recorded._",

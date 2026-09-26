@@ -2,7 +2,7 @@ import fs from "node:fs/promises";
 import path from "node:path";
 import { RUNS_DIR } from "./config.js";
 import { slugify } from "./slug.js";
-import type { DisambiguationHints, RunManifest, SourceRunState } from "./types.js";
+import type { Confidence, DisambiguationHints, MatchedPage, RunManifest, SourceRunState } from "./types.js";
 
 async function ensureDir(dir: string): Promise<void> {
   await fs.mkdir(dir, { recursive: true });
@@ -89,6 +89,57 @@ export function pendingOrFailedSources(manifest: RunManifest): string[] {
   return Object.values(manifest.sources)
     .filter((s) => s.status === "pending" || s.status === "failed" || s.status === "in_progress")
     .map((s) => s.source);
+}
+
+export interface OverallConfidence {
+  level: Confidence;
+  basis: string;
+}
+
+/**
+ * Rolls up the run into one confidence label for whether the findings are
+ * actually about the intended company. Only considers matched pages from
+ * sources that produced real findings (status "done") — a candidate page
+ * that was never successfully fetched didn't confirm anything.
+ */
+export function overallConfidence(manifest: RunManifest): OverallConfidence {
+  const confirmedPages: MatchedPage[] = Object.values(manifest.sources)
+    .filter((s) => s.status === "done")
+    .flatMap((s) => s.matchedPages);
+
+  if (confirmedPages.length === 0) {
+    return {
+      level: "low",
+      basis: "No source produced confirmed findings, so there is nothing to base confidence on.",
+    };
+  }
+
+  const bySignal = (signalPrefix: string) =>
+    confirmedPages.find((p) => p.matchedOn.some((m) => m.startsWith(signalPrefix)));
+
+  const domainMatch = bySignal("domain:");
+  if (domainMatch) {
+    return { level: "high", basis: `Confirmed via domain match (${domainMatch.matchedOn.join(", ")}).` };
+  }
+
+  const locationMatch = bySignal("location:");
+  if (locationMatch) {
+    return { level: "high", basis: `Confirmed via location match (${locationMatch.matchedOn.join(", ")}).` };
+  }
+
+  if (confirmedPages.some((p) => p.confidence === "high")) {
+    return { level: "high", basis: "At least one confirmed source matched with high confidence." };
+  }
+  if (confirmedPages.some((p) => p.confidence === "medium")) {
+    return {
+      level: "medium",
+      basis: "Findings matched on company name alone, with no domain/location signal to confirm identity.",
+    };
+  }
+  return {
+    level: "low",
+    basis: "Only loose/partial name matches were confirmed — verify these are about the intended company.",
+  };
 }
 
 export function summarize(manifest: RunManifest): string {
