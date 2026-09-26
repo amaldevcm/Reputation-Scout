@@ -51,6 +51,12 @@ For Claude Code: `.claude/mcp.json` or `claude mcp add`. For Cursor: `.cursor/mc
 | `get_research_status(company_name)` | Check progress without doing further work |
 | `save_report(company_name, findings?, redact_names?, allow_low_coverage?)` | Write the consolidated Markdown report to `./reports/<slug>-<date>.md` |
 
+## Findings summarization
+
+`save_report` (when called without its own `findings` argument) tries to condense each source's raw extracted text into a 1-2 sentence summary using **MCP sampling** (`sampling/createMessage`) — a request back to whichever host client is connected, asking *its* configured model to do the summarization. No separate LLM API key needed: the host picks the model, Reputation Scout just asks for one biased toward cheap/fast (`modelPreferences.costPriority`), since it's a short extractive task.
+
+This needs the connected client to support sampling. Not all MCP clients do yet — when unsupported (or the request fails), the report falls back to showing each source's raw extracted text, same as before this existed, with a note saying so.
+
 ## Maintenance
 
 ```bash

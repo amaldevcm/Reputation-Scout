@@ -6,6 +6,7 @@ import {
   ListToolsRequestSchema,
 } from "@modelcontextprotocol/sdk/types.js";
 import { zodToJsonSchema } from "./lib/zodToJsonSchema.js";
+import { setServer } from "./lib/mcpServer.js";
 
 import { searchReviewsSchema, searchReviews } from "./tools/searchReviews.js";
 import { fetchPageSchema, fetchPageTool } from "./tools/fetchPageTool.js";
@@ -18,6 +19,7 @@ const server = new Server(
   { name: "reputation-scout", version: "0.1.0" },
   { capabilities: { tools: {} } }
 );
+setServer(server);
 
 const tools = [
   {

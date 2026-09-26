@@ -1,9 +1,10 @@
 import fs from "node:fs/promises";
 import path from "node:path";
 import { REPORTS_DIR, MIN_VIABLE_SOURCES } from "./config.js";
-import { redactStructuralPII } from "./redact.js";
+import { redactStructuralPII, REDACTION_SYNTHESIS_GUIDANCE } from "./redact.js";
 import { summarize, overallConfidence } from "./manifest.js";
 import { extractReviewCount, extractRating } from "./extractSignals.js";
+import { summarizeConsolidatedFindings } from "./summarize.js";
 import { todayStamp } from "./slug.js";
 import type { RunManifest } from "./types.js";
 
@@ -105,43 +106,64 @@ export async function saveReport(
     warning = `Only ${succeeded} source(s) succeeded (minimum viable is ${MIN_VIABLE_SOURCES}). This report may not be representative; pass allowLowCoverage to save anyway.`;
   }
 
-  const findingsBody =
-    options.findings ??
-    Object.values(manifest.sources)
-      .flatMap((s) => s.findings.map((f) => `### ${s.source} — ${f.url}\n\n${f.text}`))
-      .join("\n\n");
+  let findingsBody: string;
+  let summaryNote = "";
+
+  if (options.findings) {
+    findingsBody = options.findings;
+  } else {
+    const perSourceRaw = Object.values(manifest.sources)
+      .filter((s) => s.findings.length > 0)
+      .map((s) => ({ source: s.source, text: s.findings.map((f) => f.text).join("\n\n") }));
+
+    const summaries = await summarizeConsolidatedFindings(perSourceRaw, {
+      redactNames,
+    });
+
+    if (summaries) {
+      findingsBody = perSourceRaw
+        .map(({ source, text }) => `### ${source}\n\n${summaries[source] ?? text}`)
+        .join("\n\n");
+      summaryNote =
+        "_Findings below are LLM-generated 1-2 sentence summaries of each source's extracted text, via MCP sampling through the connected client. Sources without an entry above didn't produce a summary and show the raw extracted text instead._";
+    } else {
+      findingsBody = perSourceRaw.map(({ source, text }) => `### ${source}\n\n${text}`).join("\n\n");
+      if (perSourceRaw.length > 0) {
+        summaryNote =
+          "_LLM summarization unavailable (the connected client doesn't support MCP sampling, or the request failed) — showing raw extracted text._";
+      }
+    }
+  }
 
   const bodyRedacted = redactStructuralPII(findingsBody);
 
   const noHints = !manifest.hints.domain && !manifest.hints.location && !manifest.hints.industry_hint;
   const disclaimer = noHints
-    ? `> No disambiguation hints (domain/location/industry) were provided for this run. Review the "Sources" and "⚠ Unverified matches" sections below to confirm these results are about the intended company.\n\n`
+    ? `> No disambiguation hints (domain/location/industry) were provided for this run. Review the "Sources" and "⚠ Unverified matches" sections below to confirm these results are about the intended company.`
     : "";
 
   const unverified = buildUnverifiedSection(manifest);
 
-  const lines = [
+  const findingsBlock = [
+    "## Findings",
+    summaryNote,
+    bodyRedacted || "_No findings recorded._",
+  ]
+    .filter(Boolean)
+    .join("\n\n");
+
+  const blocks = [
     `# Reputation report: ${manifest.companyName}`,
-    "",
     `_Generated ${todayStamp()}._`,
-    "",
     disclaimer,
     buildCompanySection(manifest),
-    "",
     buildSourceSignalsSection(manifest),
-    "",
-    "## Findings",
-    "",
-    bodyRedacted || "_No findings recorded._",
-    "",
+    findingsBlock,
     buildSourcesSection(manifest),
-  ];
+    unverified,
+  ].filter((b): b is string => Boolean(b && b.trim()));
 
-  if (unverified) {
-    lines.push("", unverified);
-  }
-
-  const content = lines.filter((l) => l !== "").join("\n") + "\n";
+  const content = blocks.join("\n\n") + "\n";
 
   await fs.mkdir(REPORTS_DIR, { recursive: true });
   const filePath = path.join(REPORTS_DIR, `${manifest.companySlug}-${todayStamp()}.md`);
