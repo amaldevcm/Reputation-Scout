@@ -43,5 +43,6 @@ export async function saveReportTool(input: SaveReportInput) {
     status: result.warning ? "saved_with_warning" : "saved",
     path: result.path,
     warning: result.warning,
+    preview: result.preview,
   };
 }

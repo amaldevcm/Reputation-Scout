@@ -17,6 +17,14 @@ export interface SaveReportOptions {
 export interface SaveReportResult {
   path: string;
   warning?: string;
+  preview: string;
+}
+
+const PREVIEW_FINDINGS_CHAR_LIMIT = 500;
+
+function truncate(text: string, limit: number): string {
+  const trimmed = text.trim();
+  return trimmed.length > limit ? `${trimmed.slice(0, limit).trim()}…` : trimmed;
 }
 
 function buildCompanySection(manifest: RunManifest): string {
@@ -169,5 +177,16 @@ export async function saveReport(
   const filePath = path.join(REPORTS_DIR, `${manifest.companySlug}-${todayStamp()}.md`);
   await fs.writeFile(filePath, content, "utf-8");
 
-  return { path: filePath, warning };
+  const { level: confidenceLevel } = overallConfidence(manifest);
+  const website = manifest.hints.domain ?? "not provided";
+  const previewBlocks = [
+    `${manifest.companyName} — ${website} — confidence: ${confidenceLevel}`,
+    summarize(manifest),
+    summaryNote ? summaryNote.replace(/^_|_$/g, "") : "",
+    truncate(bodyRedacted, PREVIEW_FINDINGS_CHAR_LIMIT) || "No findings recorded.",
+    `Full report: ${filePath}`,
+  ].filter(Boolean);
+  const preview = previewBlocks.join("\n\n");
+
+  return { path: filePath, warning, preview };
 }

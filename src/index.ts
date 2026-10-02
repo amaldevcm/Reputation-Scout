@@ -56,7 +56,7 @@ const tools = [
   {
     name: "save_report",
     description:
-      "Write the consolidated Markdown report to ./reports/<slug>-<date>.md. Pulls from the run manifest if findings is omitted.",
+      "Write the consolidated Markdown report to ./reports/<slug>-<date>.md. Pulls from the run manifest if findings is omitted. The result includes a short `preview` (company, confidence, source coverage, a truncated findings excerpt, and the full file path) — show this to the user directly rather than just stating the path, so they see a snapshot without opening the file.",
     schema: saveReportSchema,
     handler: saveReportTool,
   },
