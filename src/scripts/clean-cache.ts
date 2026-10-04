@@ -1,7 +1,7 @@
 #!/usr/bin/env node
 import fs from "node:fs/promises";
 import path from "node:path";
-import { PAGE_CACHE_DIR, CACHE_TTL_MS } from "../lib/config.js";
+import { PAGE_CACHE_DIR, CACHE_TTL_MS } from "../config.js";
 
 async function main() {
   let entries: string[];

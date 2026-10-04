@@ -1,8 +1,8 @@
 import { z } from "zod";
-import { loadManifest } from "../lib/manifest.js";
-import { saveReport } from "../lib/report.js";
-import { REDACT_NAMES_DEFAULT } from "../lib/config.js";
-import { REDACTION_SYNTHESIS_GUIDANCE } from "../lib/redact.js";
+import { loadManifest } from "../pipeline/manifest.js";
+import { saveReport } from "../report/report.js";
+import { REDACT_NAMES_DEFAULT } from "../config.js";
+import { REDACTION_SYNTHESIS_GUIDANCE } from "../report/redact.js";
 
 export const saveReportSchema = z.object({
   company_name: z.string().describe("The company the report is for."),

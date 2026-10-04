@@ -5,8 +5,8 @@ import {
   CallToolRequestSchema,
   ListToolsRequestSchema,
 } from "@modelcontextprotocol/sdk/types.js";
-import { zodToJsonSchema } from "./lib/zodToJsonSchema.js";
-import { setServer } from "./lib/mcpServer.js";
+import { zodToJsonSchema } from "./server/zodToJsonSchema.js";
+import { setServer } from "./server/mcpServer.js";
 
 import { searchReviewsSchema, searchReviews } from "./tools/searchReviews.js";
 import { fetchPageSchema, fetchPageTool } from "./tools/fetchPageTool.js";

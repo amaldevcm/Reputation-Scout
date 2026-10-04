@@ -1,9 +1,9 @@
 import { z } from "zod";
-import { DEFAULT_SOURCES } from "../lib/types.js";
-import { loadManifest, newManifest, saveManifest, summarize } from "../lib/manifest.js";
-import { processRemainingSources } from "../lib/processRemaining.js";
-import { hasAnyHints } from "../lib/disambiguate.js";
-import { unresolvedResult } from "../lib/unresolved.js";
+import { DEFAULT_SOURCES } from "../types.js";
+import { loadManifest, newManifest, saveManifest, summarize } from "../pipeline/manifest.js";
+import { runSources } from "../pipeline/runSources.js";
+import { hasAnyHints } from "../pipeline/disambiguate.js";
+import { unresolvedResult } from "../pipeline/unresolved.js";
 
 export const researchCompanySchema = z.object({
   company_name: z.string().describe("The company to research."),
@@ -53,7 +53,7 @@ export async function researchCompany(input: ResearchCompanyInput) {
 
   const disclaimerNeeded = !hasAnyHints(hints);
 
-  await processRemainingSources(manifest, sources);
+  await runSources(manifest, sources);
 
   return {
     status: "completed",

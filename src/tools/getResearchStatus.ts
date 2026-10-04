@@ -1,5 +1,5 @@
 import { z } from "zod";
-import { loadManifest, summarize } from "../lib/manifest.js";
+import { loadManifest, summarize } from "../pipeline/manifest.js";
 
 export const getResearchStatusSchema = z.object({
   company_name: z.string().describe("The company whose run status to check."),

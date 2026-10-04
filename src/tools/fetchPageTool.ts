@@ -1,5 +1,5 @@
 import { z } from "zod";
-import { fetchPage } from "../lib/fetchPage.js";
+import { fetchPage } from "../fetch/fetchPage.js";
 
 export const fetchPageSchema = z.object({
   url: z.string().url().describe("The URL to fetch and extract readable text from."),

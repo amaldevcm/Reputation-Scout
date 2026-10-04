@@ -1,6 +1,6 @@
 import { z } from "zod";
-import { search } from "../lib/search/index.js";
-import { buildQuery } from "../lib/searchQuery.js";
+import { search } from "../search/index.js";
+import { buildQuery } from "../pipeline/searchQuery.js";
 
 export const searchReviewsSchema = z.object({
   company_name: z.string().describe("The company to search reviews for."),

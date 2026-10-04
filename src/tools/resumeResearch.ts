@@ -1,7 +1,7 @@
 import { z } from "zod";
-import { loadManifest, pendingOrFailedSources, summarize, saveManifest } from "../lib/manifest.js";
-import { processRemainingSources } from "../lib/processRemaining.js";
-import { unresolvedResult } from "../lib/unresolved.js";
+import { loadManifest, pendingOrFailedSources, summarize, saveManifest } from "../pipeline/manifest.js";
+import { runSources } from "../pipeline/runSources.js";
+import { unresolvedResult } from "../pipeline/unresolved.js";
 
 export const resumeResearchSchema = z.object({
   company_name: z.string().describe("The company whose incomplete run should be continued."),
@@ -31,7 +31,7 @@ export async function resumeResearch(input: ResumeResearchInput) {
   }
   await saveManifest(manifest);
 
-  await processRemainingSources(manifest, remaining);
+  await runSources(manifest, remaining);
 
   return { status: "completed", summary: summarize(manifest), ...unresolvedResult(manifest) };
 }
