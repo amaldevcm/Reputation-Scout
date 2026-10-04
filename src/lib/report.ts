@@ -5,6 +5,8 @@ import { redactStructuralPII, REDACTION_SYNTHESIS_GUIDANCE } from "./redact.js";
 import { summarize, overallConfidence } from "./manifest.js";
 import { extractReviewCount, extractRating } from "./extractSignals.js";
 import { summarizeConsolidatedFindings } from "./summarize.js";
+import { DATA_SOURCES } from "./dataSources/index.js";
+import { unresolvedSources, runHealthLines, type UnresolvedSource } from "./unresolved.js";
 import { todayStamp } from "./slug.js";
 import type { RunManifest } from "./types.js";
 
@@ -43,8 +45,11 @@ function buildCompanySection(manifest: RunManifest): string {
 function buildSourceSignalsSection(manifest: RunManifest): string {
   const rows = Object.values(manifest.sources).map((s) => {
     const combinedText = s.findings.map((f) => f.text).join(" ");
-    const reviewCount = combinedText ? (extractReviewCount(combinedText) ?? "not detected") : "—";
-    const rating = combinedText ? (extractRating(combinedText) ?? "not detected") : "—";
+    // Data sources write their own summary text, so pattern-matching it for a
+    // review count or rating would misread it (e.g. a sample size as a count).
+    const isDataSource = s.source in DATA_SOURCES;
+    const reviewCount = isDataSource ? "n/a" : combinedText ? (extractReviewCount(combinedText) ?? "not detected") : "—";
+    const rating = isDataSource ? "n/a" : combinedText ? (extractRating(combinedText) ?? "not detected") : "—";
 
     // Prefer the page an actual finding came from; fall back to the best
     // candidate the source turned up even if fetching it didn't pan out.
@@ -62,7 +67,7 @@ function buildSourceSignalsSection(manifest: RunManifest): string {
     "| --- | --- | --- | --- | --- |",
     ...rows,
     "",
-    "_\"Reviews found\" and \"Rating\" are extracted from page text with simple pattern matching and may miss or misread a source's actual formatting — treat as an approximate signal, not an authoritative count. \"—\" means not applicable (no findings from that source); \"not detected\" means findings exist but no count/rating pattern was found in them._",
+    "_\"Reviews found\" and \"Rating\" are extracted from page text with simple pattern matching and may miss or misread a source's actual formatting — treat as an approximate signal, not an authoritative count. \"—\" means not applicable (no findings from that source); \"not detected\" means findings exist but no count/rating pattern was found in them; \"n/a\" marks public-record and API sources, whose counts and ratings are in the Findings section instead._",
   ].join("\n");
 }
 
@@ -73,9 +78,11 @@ function buildSourcesSection(manifest: RunManifest): string {
         ? s.error ?? s.status
         : s.status === "no_results"
           ? "no results found"
-          : s.status === "done"
-            ? `${s.matchedPages.length} page(s) matched`
-            : s.status;
+          : s.status === "not_applicable"
+            ? s.detail ?? "not applicable to this company"
+            : s.status === "done"
+              ? s.detail ?? `${s.matchedPages.length} page(s) matched`
+              : s.status;
     return `| ${s.source} | ${s.status} | ${detail} |`;
   });
 
@@ -87,6 +94,25 @@ function buildSourcesSection(manifest: RunManifest): string {
     ...rows,
     "",
     `_${summarize(manifest)}._`,
+  ].join("\n");
+}
+
+function buildRunHealthSection(unresolved: UnresolvedSource[]): string | null {
+  const lines = runHealthLines(unresolved);
+  return lines.length > 0 ? ["## Run health", "", ...lines].join("\n") : null;
+}
+
+function buildManualLookupSection(unresolved: UnresolvedSource[]): string | null {
+  if (unresolved.length === 0) return null;
+  const rows = unresolved.map((u) => `| ${u.source} | ${u.why} | [Open](${u.lookupUrl}) |`);
+  return [
+    "## Check manually",
+    "",
+    "These sources gave no usable result automatically. Each link opens the company's lookup on that site.",
+    "",
+    "| Source | Why | Link |",
+    "| --- | --- | --- |",
+    ...rows,
   ].join("\n");
 }
 
@@ -151,6 +177,7 @@ export async function saveReport(
     : "";
 
   const unverified = buildUnverifiedSection(manifest);
+  const unresolved = unresolvedSources(manifest);
 
   const findingsBlock = [
     "## Findings",
@@ -165,9 +192,11 @@ export async function saveReport(
     `_Generated ${todayStamp()}._`,
     disclaimer,
     buildCompanySection(manifest),
+    buildRunHealthSection(unresolved),
     buildSourceSignalsSection(manifest),
     findingsBlock,
     buildSourcesSection(manifest),
+    buildManualLookupSection(unresolved),
     unverified,
   ].filter((b): b is string => Boolean(b && b.trim()));
 

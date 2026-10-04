@@ -24,7 +24,8 @@ setServer(server);
 const tools = [
   {
     name: "search_reviews",
-    description: "Discover review-page URLs for a company on one source via Brave Search.",
+    description:
+      "Discover review-page URLs for a company on one source via the configured search provider (Tavily, Brave, or a key-free DuckDuckGo fallback).",
     schema: searchReviewsSchema,
     handler: searchReviews,
   },

@@ -1,3 +1,4 @@
+import { normalizeDomain } from "./domain.js";
 import type { Confidence, DisambiguationHints } from "./types.js";
 
 export interface ScoredMatch {
@@ -25,8 +26,7 @@ export function scoreMatch(
   let mismatchSignal = false;
 
   if (hints.domain) {
-    const domainLower = hints.domain.toLowerCase().replace(/^https?:\/\//, "");
-    domainMatched = page.url.toLowerCase().includes(domainLower);
+    domainMatched = page.url.toLowerCase().includes(normalizeDomain(hints.domain));
     if (domainMatched) matchedOn.push(`domain:${hints.domain}`);
   }
 

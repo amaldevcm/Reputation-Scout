@@ -1,3 +1,4 @@
+import { normalizeDomain } from "../domain.js";
 import type { MatchedPage } from "../types.js";
 import type { Resolver } from "./types.js";
 
@@ -11,11 +12,9 @@ import type { Resolver } from "./types.js";
 export const sitejabberResolver: Resolver = async (_companyName, hints) => {
   if (!hints.domain) return null;
 
-  const domain = hints.domain.toLowerCase().replace(/^https?:\/\//, "").replace(/\/$/, "");
-  const url = `https://www.sitejabber.com/reviews/${domain}`;
-
+  const domain = normalizeDomain(hints.domain);
   const match: MatchedPage = {
-    url,
+    url: `https://www.sitejabber.com/reviews/${domain}`,
     title: `SiteJabber: ${domain}`,
     confidence: "high",
     matchedOn: [`domain:${hints.domain}`],

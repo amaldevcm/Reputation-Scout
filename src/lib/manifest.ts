@@ -148,12 +148,14 @@ export function summarize(manifest: RunManifest): string {
   const succeeded = states.filter((s) => s.status === "done").length;
   const blocked = states.filter((s) => s.status === "blocked").map((s) => s.source);
   const noResults = states.filter((s) => s.status === "no_results").map((s) => s.source);
+  const notApplicable = states.filter((s) => s.status === "not_applicable").map((s) => s.source);
   const failed = states.filter((s) => s.status === "failed").map((s) => s.source);
   const parseErrors = states.filter((s) => s.status === "parse_error").map((s) => s.source);
 
   const parts = [`${succeeded}/${total} sources succeeded`];
   if (blocked.length) parts.push(`${blocked.length} blocked (${blocked.join(", ")})`);
   if (noResults.length) parts.push(`${noResults.length} had no results (${noResults.join(", ")})`);
+  if (notApplicable.length) parts.push(`${notApplicable.length} not applicable (${notApplicable.join(", ")})`);
   if (failed.length) parts.push(`${failed.length} failed (${failed.join(", ")})`);
   if (parseErrors.length) parts.push(`${parseErrors.length} parse error (${parseErrors.join(", ")})`);
   return parts.join(", ");

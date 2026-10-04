@@ -3,6 +3,7 @@ import { DEFAULT_SOURCES } from "../lib/types.js";
 import { loadManifest, newManifest, saveManifest, summarize } from "../lib/manifest.js";
 import { processRemainingSources } from "../lib/processRemaining.js";
 import { hasAnyHints } from "../lib/disambiguate.js";
+import { unresolvedResult } from "../lib/unresolved.js";
 
 export const researchCompanySchema = z.object({
   company_name: z.string().describe("The company to research."),
@@ -57,6 +58,7 @@ export async function researchCompany(input: ResearchCompanyInput) {
   return {
     status: "completed",
     summary: summarize(manifest),
+    ...unresolvedResult(manifest),
     disclaimer: disclaimerNeeded
       ? "No disambiguation hints (domain/location/industry_hint) were provided; review low-confidence matches before trusting the report."
       : undefined,

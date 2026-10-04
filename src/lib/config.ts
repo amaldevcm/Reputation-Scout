@@ -2,6 +2,12 @@ import path from "node:path";
 
 export const BRAVE_API_KEY = process.env.BRAVE_API_KEY ?? "";
 export const TAVILY_API_KEY = process.env.TAVILY_API_KEY ?? "";
+// Optional contact address added to the User-Agent of public-API calls (the
+// SEC in particular asks automated clients to identify themselves).
+export const CONTACT_EMAIL = process.env.REPSCOUT_CONTACT_EMAIL ?? "";
+export const JINA_API_KEY = process.env.JINA_API_KEY ?? "";
+// Jina Reader fallback for bot-walled pages; sends the target URL to r.jina.ai.
+export const JINA_FALLBACK_ENABLED = process.env.REPSCOUT_JINA_FALLBACK !== "false";
 export const CACHE_DIR = process.env.REPSCOUT_CACHE_DIR ?? path.resolve(".cache");
 export const REPORTS_DIR = process.env.REPSCOUT_REPORTS_DIR ?? path.resolve("reports");
 export const RUNS_DIR = path.join(CACHE_DIR, "runs");

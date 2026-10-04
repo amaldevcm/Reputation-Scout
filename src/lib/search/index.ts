@@ -2,6 +2,7 @@ import { TAVILY_API_KEY, BRAVE_API_KEY } from "../config.js";
 import { tavilyProvider } from "./tavilyProvider.js";
 import { braveProvider } from "./braveProvider.js";
 import { duckduckgoProvider } from "./duckduckgoProvider.js";
+import { SourceFailure } from "../failure.js";
 import type { SearchProvider, SearchResult } from "./types.js";
 
 export type { SearchProvider, SearchResult };
@@ -24,6 +25,16 @@ function selectProvider(): SearchProvider {
  */
 export async function search(query: string, count = 10): Promise<{ provider: string; results: SearchResult[] }> {
   const provider = selectProvider();
-  const results = await provider.search(query, count);
-  return { provider: provider.name, results };
+  try {
+    const results = await provider.search(query, count);
+    return { provider: provider.name, results };
+  } catch (err) {
+    // With no key configured, DuckDuckGo is the only provider, so its failure
+    // really means "no usable search" — say what the user can do about it.
+    if (provider === duckduckgoProvider) {
+      const cause = err instanceof Error ? err.message : String(err);
+      throw new SourceFailure(`No search API key is set and the key-free DuckDuckGo fallback failed: ${cause}`, "no_search_key");
+    }
+    throw err;
+  }
 }

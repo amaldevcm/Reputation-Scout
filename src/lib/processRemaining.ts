@@ -5,17 +5,21 @@ import { scoreMatch } from "./disambiguate.js";
 import { redactStructuralPII } from "./redact.js";
 import { updateSourceState } from "./manifest.js";
 import { RESOLVERS } from "./resolvers/index.js";
+import { DATA_SOURCES, type DataSource } from "./dataSources/index.js";
+import { classifyMessage, describeError, type FailureReason } from "./failure.js";
 import type { ExtractedFinding, MatchedPage, RunManifest } from "./types.js";
+
+type Resolution =
+  | { matchedPages: MatchedPage[] }
+  | { noResults: true }
+  | { error: string; reason: FailureReason };
 
 /**
  * Resolves candidate pages for a source either via its direct-URL resolver
  * (skipping the external search step entirely) or, when no resolver applies,
  * via the generic search provider — same as before this was added.
  */
-async function resolveMatchedPages(
-  manifest: RunManifest,
-  source: string
-): Promise<{ matchedPages: MatchedPage[] } | { noResults: true } | { error: string }> {
+async function resolveMatchedPages(manifest: RunManifest, source: string): Promise<Resolution> {
   const resolver = RESOLVERS[source];
   if (resolver) {
     try {
@@ -24,8 +28,8 @@ async function resolveMatchedPages(
         return resolved.length === 0 ? { noResults: true } : { matchedPages: resolved };
       }
       // resolver declined (e.g. no domain hint) — fall through to search
-    } catch (err: any) {
-      return { error: err?.message ?? String(err) };
+    } catch (err) {
+      return describeError(err);
     }
   }
 
@@ -38,22 +42,69 @@ async function resolveMatchedPages(
       return { url: r.url, title: r.title, confidence, matchedOn };
     });
     return { matchedPages };
-  } catch (err: any) {
-    return { error: err?.message ?? String(err) };
+  } catch (err) {
+    return describeError(err);
   }
 }
 
+/**
+ * Runs a source that is answered by a structured API (see lib/dataSources)
+ * rather than by fetching pages. The adapter returns finished finding text.
+ */
+async function processDataSource(manifest: RunManifest, source: string, dataSource: DataSource): Promise<void> {
+  try {
+    const result = await dataSource(manifest.companyName, manifest.hints);
+
+    if (result.kind === "ok") {
+      await updateSourceState(manifest, source, {
+        status: "done",
+        matchedPages: result.pages,
+        findings: result.findings.map((f) => ({ ...f, text: redactStructuralPII(f.text), redacted: true })),
+        detail: result.detail,
+      });
+    } else if (result.kind === "not_applicable") {
+      await updateSourceState(manifest, source, { status: "not_applicable", detail: result.reason });
+    } else {
+      await updateSourceState(manifest, source, { status: "no_results" });
+    }
+  } catch (err) {
+    await markFailed(manifest, source, describeError(err));
+  }
+}
+
+async function markFailed(
+  manifest: RunManifest,
+  source: string,
+  failure: { error: string; reason: FailureReason },
+  matchedPages?: MatchedPage[]
+): Promise<void> {
+  await updateSourceState(manifest, source, {
+    status: "failed",
+    ...(matchedPages && { matchedPages }),
+    attempts: (manifest.sources[source]?.attempts ?? 0) + 1,
+    ...failure,
+  });
+}
+
 async function processSource(manifest: RunManifest, source: string): Promise<void> {
-  await updateSourceState(manifest, source, { status: "in_progress" });
+  // Clear what a previous attempt left behind so a retried source doesn't carry a stale error.
+  await updateSourceState(manifest, source, {
+    status: "in_progress",
+    error: undefined,
+    reason: undefined,
+    detail: undefined,
+  });
+
+  const dataSource = DATA_SOURCES[source];
+  if (dataSource) {
+    await processDataSource(manifest, source, dataSource);
+    return;
+  }
 
   const resolution = await resolveMatchedPages(manifest, source);
 
   if ("error" in resolution) {
-    await updateSourceState(manifest, source, {
-      status: "failed",
-      attempts: (manifest.sources[source]?.attempts ?? 0) + 1,
-      error: resolution.error,
-    });
+    await markFailed(manifest, source, resolution);
     return;
   }
 
@@ -91,28 +142,23 @@ async function processSource(manifest: RunManifest, source: string): Promise<voi
   if (findings.length > 0) {
     await updateSourceState(manifest, source, { status: "done", matchedPages, findings });
   } else if (sawBlocked) {
-    await updateSourceState(manifest, source, { status: "blocked", matchedPages, error: lastError });
+    await updateSourceState(manifest, source, {
+      status: "blocked",
+      matchedPages,
+      error: lastError,
+      reason: "bot_blocked",
+    });
   } else if (sawParseError) {
     await updateSourceState(manifest, source, { status: "parse_error", matchedPages, error: lastError });
   } else if (sawFailed) {
-    await updateSourceState(manifest, source, {
-      status: "failed",
-      matchedPages,
-      attempts: (manifest.sources[source]?.attempts ?? 0) + 1,
-      error: lastError,
-    });
+    await markFailed(manifest, source, { error: lastError, reason: classifyMessage(lastError) }, matchedPages);
   } else if (sawNotFound) {
     // Every candidate was a clean 404 (a direct-URL guess with no presence
     // at that address) — the company just isn't on this source, not a
     // failure to reach it.
     await updateSourceState(manifest, source, { status: "no_results", matchedPages });
   } else {
-    await updateSourceState(manifest, source, {
-      status: "failed",
-      matchedPages,
-      attempts: (manifest.sources[source]?.attempts ?? 0) + 1,
-      error: lastError || "unknown error",
-    });
+    await markFailed(manifest, source, { error: lastError || "unknown error", reason: "unknown" }, matchedPages);
   }
 }
 
