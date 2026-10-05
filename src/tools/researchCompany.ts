@@ -4,6 +4,7 @@ import { loadManifest, newManifest, saveManifest, summarize } from "../pipeline/
 import { runSources } from "../pipeline/runSources.js";
 import { hasAnyHints } from "../pipeline/disambiguate.js";
 import { unresolvedResult } from "../pipeline/unresolved.js";
+import { resolveOfficialDomain } from "../util/wikidata.js";
 
 export const researchCompanySchema = z.object({
   company_name: z.string().describe("The company to research."),
@@ -29,6 +30,13 @@ export async function researchCompany(input: ResearchCompanyInput) {
     location: input.location,
     industry_hint: input.industry_hint,
   };
+
+  // No domain given: try to find the official one so the direct-URL sources can run.
+  let resolvedDomain: string | undefined;
+  if (!hints.domain) {
+    resolvedDomain = (await resolveOfficialDomain(input.company_name)) ?? undefined;
+    hints.domain = resolvedDomain;
+  }
 
   let manifest = await loadManifest(input.company_name);
 
@@ -58,6 +66,9 @@ export async function researchCompany(input: ResearchCompanyInput) {
   return {
     status: "completed",
     summary: summarize(manifest),
+    ...(resolvedDomain && {
+      resolved_domain: `${resolvedDomain} (found on Wikidata because no domain was given; pass domain to override)`,
+    }),
     ...unresolvedResult(manifest),
     disclaimer: disclaimerNeeded
       ? "No disambiguation hints (domain/location/industry_hint) were provided; review low-confidence matches before trusting the report."

@@ -3,15 +3,20 @@ import { DEFAULT_UA } from "./httpFetch.js";
 import { JINA_API_KEY } from "../config.js";
 
 const JINA_HOST = "r.jina.ai";
-const MIN_TEXT_LENGTH = 200;
+export const MIN_READER_TEXT_LENGTH = 200;
 const JINA_RETRY_MS = 4_000;
 
-// Jina returns HTTP 200 with the target's error page as the content, so a
-// missing profile has to be recognized from the page itself.
+// Reader services return HTTP 200 with the target's error page as the content,
+// so a missing profile has to be recognized from the page itself.
 const NOT_FOUND_RE =
   /could not be found|couldn't be found|page not found|\b404\b[^a-z0-9]{0,3}(?:not found|error)|!\[Image \d+: 404\]/i;
 
-export type JinaOutcome = { kind: "ok"; text: string } | { kind: "not_found" };
+export function looksLikeNotFound(text: string): boolean {
+  return NOT_FOUND_RE.test(text.slice(0, 3000));
+}
+
+/** What a fallback page reader (Jina, Firecrawl) can tell us about a URL. */
+export type ReaderOutcome = { kind: "ok"; text: string } | { kind: "not_found" };
 
 /**
  * Fallback for pages a plain fetch gets bot-walled on. Jina Reader fetches the
@@ -21,7 +26,7 @@ export type JinaOutcome = { kind: "ok"; text: string } | { kind: "not_found" };
  *
  * Returns null if Jina couldn't get usable content (still blocked or empty).
  */
-export async function fetchViaJina(url: string): Promise<JinaOutcome | null> {
+export async function fetchViaJina(url: string): Promise<ReaderOutcome | null> {
   await throttleHost(JINA_HOST);
 
   const headers: Record<string, string> = {
@@ -50,8 +55,8 @@ export async function fetchViaJina(url: string): Promise<JinaOutcome | null> {
 
     const text = contentStart === -1 ? body : body.slice(contentStart + "Markdown Content:".length);
     const trimmed = text.trim();
-    if (trimmed.length < MIN_TEXT_LENGTH) return null;
-    if (NOT_FOUND_RE.test(trimmed.slice(0, 3000))) return { kind: "not_found" };
+    if (trimmed.length < MIN_READER_TEXT_LENGTH) return null;
+    if (looksLikeNotFound(trimmed)) return { kind: "not_found" };
 
     // The page title often carries the headline rating ("... rated "Bad" with
     // 1.6 / 5 on Trustpilot"), which the body alone doesn't repeat.

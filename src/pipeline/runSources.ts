@@ -10,7 +10,8 @@ import { classifyMessage, describeError, type FailureReason } from "./failure.js
 import type { ExtractedFinding, MatchedPage, RunManifest } from "../types.js";
 
 type Resolution =
-  | { matchedPages: MatchedPage[] }
+  // `provider` is the search engine that found the pages; absent for direct-URL resolvers.
+  | { matchedPages: MatchedPage[]; provider?: string }
   | { noResults: true }
   | { error: string; reason: FailureReason };
 
@@ -35,13 +36,13 @@ async function resolveMatchedPages(manifest: RunManifest, source: string): Promi
 
   const query = buildQuery(manifest.companyName, source, manifest.hints);
   try {
-    const { results } = await search(query);
+    const { provider, results } = await search(query);
     if (results.length === 0) return { noResults: true };
     const matchedPages = results.slice(0, 3).map((r) => {
       const { confidence, matchedOn } = scoreMatch(manifest.companyName, manifest.hints, r);
       return { url: r.url, title: r.title, confidence, matchedOn };
     });
-    return { matchedPages };
+    return { matchedPages, provider };
   } catch (err) {
     return describeError(err);
   }
@@ -113,7 +114,7 @@ async function processSource(manifest: RunManifest, source: string): Promise<voi
     return;
   }
 
-  const { matchedPages } = resolution;
+  const { matchedPages, provider } = resolution;
   const findings: ExtractedFinding[] = [];
   let sawBlocked = false;
   let sawParseError = false;
@@ -140,7 +141,12 @@ async function processSource(manifest: RunManifest, source: string): Promise<voi
   }
 
   if (findings.length > 0) {
-    await updateSourceState(manifest, source, { status: "done", matchedPages, findings });
+    await updateSourceState(manifest, source, {
+      status: "done",
+      matchedPages,
+      findings,
+      ...(provider && { detail: `${matchedPages.length} page(s) matched via ${provider}` }),
+    });
   } else if (sawBlocked) {
     await updateSourceState(manifest, source, {
       status: "blocked",

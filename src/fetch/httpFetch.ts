@@ -3,6 +3,10 @@ import { throttleHost, hostnameOf } from "./throttle.js";
 export const DEFAULT_UA =
   "Mozilla/5.0 (compatible; reputation-scout/0.1; +https://www.npmjs.com/package/reputation-scout)";
 
+// For search engines that serve a different page to anything that doesn't look like a browser.
+export const BROWSER_UA =
+  "Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/124.0 Safari/537.36";
+
 const BOT_CHECK_MARKERS = [
   "captcha",
   "are you a human",

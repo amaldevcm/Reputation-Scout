@@ -15,13 +15,22 @@ npm install
 npm run build
 ```
 
-No API key required to get started. Two sources (**BBB**, **SiteJabber**) resolve directly via the site's own predictable, plain-fetchable URLs, never touching a search API at all. Everything else falls back to a key-free DuckDuckGo scrape when no search API key is set.
+No API key required to get started. Three sources (**BBB**, **SiteJabber**, **Trustpilot**) resolve directly via the site's own predictable URLs when a domain is known (or found automatically, see below), without any search. Everything else goes through a search provider chain.
 
-For everything else, search picks a provider in this order:
+### Search providers
 
-1. **[Tavily](https://tavily.com/)** (`TAVILY_API_KEY`) — recommended. Free tier, 1,000 credits/month, no credit card required.
-2. **[Brave Search](https://brave.com/search/api/)** (`BRAVE_API_KEY`) — supported if you already have a key, but as of February 2026 Brave requires a credit card at signup (no longer a true no-cost free tier).
-3. **DuckDuckGo** (no key) — scrapes an unofficial HTML endpoint; prone to being IP-flagged as bot traffic under repeated use, so treat it as a fallback rather than a reliable default for heavy use.
+Search tries providers in order and moves on when one errors, is rate-limited or is bot-checked. A provider that fails is skipped for a few minutes so later searches don't hit the same wall.
+
+1. **[Tavily](https://tavily.com/)** (`TAVILY_API_KEY`), optional. Free tier, 1,000 credits/month, no credit card required.
+2. **[Brave Search](https://brave.com/search/api/)** (`BRAVE_API_KEY`), optional. Brave now gives $5 of free credits a month but asks for a credit card at signup to confirm identity.
+3. **Bing** (no key). Scrapes Bing's HTML results locally; nobody else sees the query. It ignores the `site:` operator, so it only handles plain queries.
+4. **[Parallel Search](https://docs.parallel.ai/integrations/mcp/search-mcp)** (no key). Free anonymous hosted search that honors `site:` and returns long page excerpts. The query is sent to Parallel.
+5. **[Firecrawl](https://docs.firecrawl.dev/)** keyless search (no key). Hosted, honors `site:`, capped per IP per day (the cap isn't published). The query is sent to Firecrawl.
+6. **DuckDuckGo** (no key). Last resort; it is the first to get bot-checked.
+
+Set `REPSCOUT_HOSTED_SEARCH=false` to skip Parallel and Firecrawl and keep every query local. Then `site:` queries (most sources) have only DuckDuckGo left, so expect them to fail unless you set a Tavily or Brave key.
+
+If no company domain is given, `research_company` looks the company up on Wikidata and uses its official website when exactly one match is found. The result says so in `resolved_domain`.
 
 ## Sources
 
@@ -36,7 +45,7 @@ Every source below is free and works without an API key.
 | `hacker_news` | Stories mentioning the company ([HN search](https://hn.algolia.com/api)) | Tech-industry opinion; mostly empty for other sectors |
 | `news` | Recent headlines and average tone ([GDELT](https://www.gdeltproject.org/)) | GDELT limits clients to one request per 5 seconds and rate-limits aggressively, so this source can fail under repeated use |
 | `app_store` | Apple App Store rating and the latest reviews for apps the company publishes | Latest reviews only; Google Play is not covered |
-| `reddit` | Reddit threads mentioning the company, found through the search provider | Needs a Tavily or Brave key to be reliable (the DuckDuckGo fallback often gets bot-checked). Search previews only, since Reddit blocks direct access |
+| `reddit` | Reddit threads mentioning the company, found through the search provider | Uses the search chain (Parallel returns the fullest previews). Search previews only, since Reddit blocks direct access |
 
 Sources the tool cannot read without paying or breaking a site's rules (G2, Indeed, Glassdoor, LinkedIn, Google reviews) are still attempted through search but frequently end up `blocked` or `failed`.
 
@@ -44,7 +53,12 @@ A source that cannot apply to a company (for example SEC filings for a private c
 
 ### Page-read fallback
 
-When a direct fetch is blocked (403/429 or a bot-check page), `fetch_page` retries through [Jina Reader](https://jina.ai/reader/) (`r.jina.ai`), which sometimes gets through. This sends the page URL to Jina. Set `REPSCOUT_JINA_FALLBACK=false` to turn it off, or `JINA_API_KEY` to raise the rate limit. Pages it cannot read (G2, Reddit) stay `blocked`.
+When a direct fetch is blocked (403/429 or a bot-check page), the page is retried through:
+
+1. [Jina Reader](https://jina.ai/reader/) (`r.jina.ai`), on by default. Sends the page URL to Jina. Set `REPSCOUT_JINA_FALLBACK=false` to turn it off, or `JINA_API_KEY` to raise its rate limit.
+2. Firecrawl's keyless scrape, **off by default**. Set `REPSCOUT_HOSTED_SCRAPE=true` to enable it. In testing it returned real review content for G2 and Glassdoor, which nothing else free could read. Both sites' terms forbid automated access, so enabling it is your call; the page URL is sent to Firecrawl.
+
+Pages no reader can get stay `blocked` and get a manual lookup link.
 
 ### When a source can't be reached
 
@@ -63,6 +77,8 @@ Empty answers from the public-record sources (CFPB, SEC, courts, Hacker News, ne
 | `REPSCOUT_CONTACT_EMAIL` | Added to the User-Agent of public-API calls. The SEC asks automated clients to identify themselves |
 | `REPSCOUT_JINA_FALLBACK` | Set to `false` to disable the Jina Reader fallback |
 | `JINA_API_KEY` | Higher Jina Reader rate limit |
+| `REPSCOUT_HOSTED_SEARCH` | Set to `false` to stop using Parallel and Firecrawl for search |
+| `REPSCOUT_HOSTED_SCRAPE` | Set to `true` to let Firecrawl read pages other readers can't (opt-in) |
 
 ## Adding it to a coding agent
 

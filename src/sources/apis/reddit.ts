@@ -36,7 +36,11 @@ export const redditSource: DataSource = async (companyName, hints) => {
 
   const lines = [
     `Reddit threads that mention "${companyName}" (found via ${provider} search; Reddit itself blocks direct access):`,
-    ...threads.map((r) => `- "${clip(r.title, 120)}" ${r.url}${r.snippet ? `\n  Preview: ${clip(r.snippet, 300)}` : ""}`),
+    ...threads.map((r) => {
+      // Providers that return a long excerpt (Parallel, Firecrawl) give a fuller preview than a snippet.
+      const preview = r.excerpt ?? r.snippet;
+      return `- "${clip(r.title, 120)}" ${r.url}${preview ? `\n  Preview: ${clip(preview, r.excerpt ? 600 : 300)}` : ""}`;
+    }),
     "Note: these are search previews, not the full threads. Open the links to read the discussion. Matching is by name, so check the threads are about the intended company.",
   ];
 

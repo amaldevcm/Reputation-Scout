@@ -8,6 +8,12 @@ export const CONTACT_EMAIL = process.env.REPSCOUT_CONTACT_EMAIL ?? "";
 export const JINA_API_KEY = process.env.JINA_API_KEY ?? "";
 // Jina Reader fallback for bot-walled pages; sends the target URL to r.jina.ai.
 export const JINA_FALLBACK_ENABLED = process.env.REPSCOUT_JINA_FALLBACK !== "false";
+// Hosted key-free search (Parallel, Firecrawl): on by default, but the query is
+// sent to those services. Set REPSCOUT_HOSTED_SEARCH=false to keep searches local.
+export const HOSTED_SEARCH_ENABLED = process.env.REPSCOUT_HOSTED_SEARCH !== "false";
+// Hosted page scrape (Firecrawl): opt-in. It can read sites (G2, Glassdoor) whose
+// terms forbid automated access, so it stays off until explicitly enabled.
+export const HOSTED_SCRAPE_ENABLED = process.env.REPSCOUT_HOSTED_SCRAPE === "true";
 export const CACHE_DIR = process.env.REPSCOUT_CACHE_DIR ?? path.resolve(".cache");
 export const REPORTS_DIR = process.env.REPSCOUT_REPORTS_DIR ?? path.resolve("reports");
 export const RUNS_DIR = path.join(CACHE_DIR, "runs");

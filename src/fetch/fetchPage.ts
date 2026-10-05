@@ -3,14 +3,14 @@ import { Readability } from "@mozilla/readability";
 import * as cheerio from "cheerio";
 import { throttleHost, hostnameOf } from "./throttle.js";
 import { getCached, setCached } from "./pageCache.js";
-import { MAX_FETCH_RETRIES, JINA_FALLBACK_ENABLED } from "../config.js";
+import { MAX_FETCH_RETRIES, JINA_FALLBACK_ENABLED, HOSTED_SCRAPE_ENABLED } from "../config.js";
 import { DEFAULT_UA, isBotChecked } from "./httpFetch.js";
 import { fetchViaJina } from "./jinaReader.js";
+import { fetchViaFirecrawl } from "./firecrawlReader.js";
 
 export type FetchOutcome =
-  // `via: "jina"` marks text fetched through the Jina Reader fallback after
-  // the direct fetch was blocked.
-  | { kind: "ok"; text: string; via?: "jina" }
+  // `via` marks text fetched through a fallback reader after the direct fetch was blocked.
+  | { kind: "ok"; text: string; via?: "jina" | "firecrawl" }
   | { kind: "blocked"; reason: string }
   | { kind: "failed"; reason: string }
   | { kind: "parse_error"; reason: string }
@@ -55,13 +55,23 @@ function extractReadableText(html: string, url: string): string | null {
   return null;
 }
 
-async function tryJina(url: string): Promise<FetchOutcome | null> {
-  if (!JINA_FALLBACK_ENABLED) return null;
-  const outcome = await fetchViaJina(url);
-  if (!outcome) return null;
-  if (outcome.kind === "not_found") return { kind: "not_found" };
-  await setCached(url, outcome.text);
-  return { kind: "ok", text: outcome.text, via: "jina" };
+// Tried in order after a direct fetch is blocked. Jina is on by default; the
+// Firecrawl scrape is opt-in because it can read sites whose terms forbid automation.
+const FALLBACK_READERS = [
+  { via: "jina", enabled: () => JINA_FALLBACK_ENABLED, read: fetchViaJina },
+  { via: "firecrawl", enabled: () => HOSTED_SCRAPE_ENABLED, read: fetchViaFirecrawl },
+] as const;
+
+async function tryFallbackReaders(url: string): Promise<FetchOutcome | null> {
+  for (const { via, enabled, read } of FALLBACK_READERS) {
+    if (!enabled()) continue;
+    const outcome = await read(url);
+    if (!outcome) continue;
+    if (outcome.kind === "not_found") return { kind: "not_found" };
+    await setCached(url, outcome.text);
+    return { kind: "ok", text: outcome.text, via };
+  }
+  return null;
 }
 
 export async function fetchPage(url: string): Promise<FetchOutcome> {
@@ -88,11 +98,11 @@ export async function fetchPage(url: string): Promise<FetchOutcome> {
     if (result.status === 403 || result.status === 429) {
       // blocked/rate-limited: not auto-retried, retrying a bot-wall wastes
       // time and looks more bot-like
-      return (await tryJina(url)) ?? { kind: "blocked", reason: `HTTP ${result.status}` };
+      return (await tryFallbackReaders(url)) ?? { kind: "blocked", reason: `HTTP ${result.status}` };
     }
 
     if (isBotChecked(result.body)) {
-      return (await tryJina(url)) ?? { kind: "blocked", reason: "bot-check markers detected" };
+      return (await tryFallbackReaders(url)) ?? { kind: "blocked", reason: "bot-check markers detected" };
     }
 
     if (result.status >= 500) {
