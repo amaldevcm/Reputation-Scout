@@ -1,0 +1,41 @@
+{
+  "_comment": "Benchmark set for evals/run.ts. `expect` lists only facts that should hold for any working run: 'found' = status done, or a specific status. Keep it small; every run makes real network calls and spends free-tier quota.",
+  "companies": [
+    {
+      "name": "Stripe",
+      "domain": "stripe.com",
+      "industry_hint": "payments",
+      "expect": { "sec_edgar": "not_applicable", "hacker_news": "found", "trustpilot": "found" }
+    },
+    {
+      "name": "JPMorgan Chase",
+      "domain": "jpmorganchase.com",
+      "industry_hint": "banking",
+      "expect": { "cfpb": "found", "sec_edgar": "found", "courtlistener": "found", "glassdoor": "found" }
+    },
+    {
+      "name": "Atlassian",
+      "domain": "atlassian.com",
+      "industry_hint": "software",
+      "expect": { "sec_edgar": "found", "hacker_news": "found", "g2": "found" }
+    },
+    {
+      "name": "Robinhood",
+      "domain": "robinhood.com",
+      "industry_hint": "brokerage",
+      "expect": { "cfpb": "found", "sec_edgar": "found", "app_store": "found", "reddit": "found" }
+    },
+    {
+      "name": "Chewy",
+      "domain": "chewy.com",
+      "industry_hint": "e-commerce",
+      "expect": { "trustpilot": "found", "bbb": "found", "sec_edgar": "found" }
+    },
+    {
+      "name": "Gusto",
+      "domain": "gusto.com",
+      "industry_hint": "payroll software",
+      "expect": { "sec_edgar": "not_applicable", "g2": "found", "glassdoor": "found" }
+    }
+  ]
+}

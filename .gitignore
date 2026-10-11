@@ -20,3 +20,6 @@ npm-debug.log*
 
 # Packaging
 *.tgz
+
+# Eval run output (baseline.json is committed)
+evals/results/

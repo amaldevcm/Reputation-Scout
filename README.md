@@ -163,3 +163,12 @@ npm run clean-cache
 ```
 
 Removes expired entries from the page cache (`.cache/pages`, 7-day TTL by default).
+
+## Tests and evals
+
+```bash
+npm test          # offline unit tests (network calls fail the test)
+npm run eval      # live benchmark over evals/companies.json; spends free-tier quota
+```
+
+`npm run eval` options: `--only <name>`, `--sources a,b`, `--use-cache`, `--save-baseline`. Each run writes `evals/results/<timestamp>.json`, prints coverage by source and by provider, checks the known facts in `companies.json`, and exits non-zero if a check fails or coverage drops more than 10 points below `evals/baseline.json`.

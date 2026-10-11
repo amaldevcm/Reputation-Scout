@@ -1,0 +1,904 @@
+{
+  "at": "2026-10-11T03:56:59.961Z",
+  "sources": [
+    "glassdoor",
+    "indeed",
+    "clutch",
+    "g2",
+    "bbb",
+    "reddit",
+    "linkedin",
+    "google_reviews",
+    "sitejabber",
+    "trustpilot",
+    "cfpb",
+    "sec_edgar",
+    "courtlistener",
+    "hacker_news",
+    "news",
+    "app_store",
+    "yelp"
+  ],
+  "summary": {
+    "coverage": 0.71,
+    "checksPassed": 19,
+    "checksTotal": 20,
+    "avgSeconds": 80.02283333333332
+  },
+  "bySource": {
+    "glassdoor": {
+      "done": 6,
+      "total": 6,
+      "statuses": {
+        "done": 6
+      }
+    },
+    "indeed": {
+      "done": 6,
+      "total": 6,
+      "statuses": {
+        "done": 6
+      }
+    },
+    "clutch": {
+      "done": 6,
+      "total": 6,
+      "statuses": {
+        "done": 6
+      }
+    },
+    "g2": {
+      "done": 6,
+      "total": 6,
+      "statuses": {
+        "done": 6
+      }
+    },
+    "bbb": {
+      "done": 0,
+      "total": 6,
+      "statuses": {
+        "blocked": 2,
+        "failed": 4
+      }
+    },
+    "reddit": {
+      "done": 5,
+      "total": 6,
+      "statuses": {
+        "no_results": 1,
+        "done": 5
+      }
+    },
+    "linkedin": {
+      "done": 6,
+      "total": 6,
+      "statuses": {
+        "done": 6
+      }
+    },
+    "google_reviews": {
+      "done": 6,
+      "total": 6,
+      "statuses": {
+        "done": 6
+      }
+    },
+    "sitejabber": {
+      "done": 2,
+      "total": 6,
+      "statuses": {
+        "done": 2,
+        "failed": 4
+      }
+    },
+    "trustpilot": {
+      "done": 2,
+      "total": 6,
+      "statuses": {
+        "done": 2,
+        "failed": 4
+      }
+    },
+    "cfpb": {
+      "done": 2,
+      "total": 6,
+      "statuses": {
+        "no_results": 4,
+        "done": 2
+      }
+    },
+    "courtlistener": {
+      "done": 6,
+      "total": 6,
+      "statuses": {
+        "done": 6
+      }
+    },
+    "hacker_news": {
+      "done": 6,
+      "total": 6,
+      "statuses": {
+        "done": 6
+      }
+    },
+    "news": {
+      "done": 0,
+      "total": 6,
+      "statuses": {
+        "no_results": 1,
+        "failed": 5
+      }
+    },
+    "app_store": {
+      "done": 6,
+      "total": 6,
+      "statuses": {
+        "done": 6
+      }
+    },
+    "yelp": {
+      "done": 2,
+      "total": 6,
+      "statuses": {
+        "blocked": 4,
+        "done": 2
+      }
+    },
+    "sec_edgar": {
+      "done": 4,
+      "total": 4,
+      "statuses": {
+        "done": 4
+      }
+    }
+  },
+  "byProvider": {
+    "searchPreview": 35,
+    "(direct/api)": 32,
+    "direct": 2,
+    "jina": 2
+  },
+  "results": [
+    {
+      "name": "Stripe",
+      "ms": 81658,
+      "sources": {
+        "glassdoor": {
+          "status": "done",
+          "provider": "searchPreview",
+          "findings": 3,
+          "chars": 6764
+        },
+        "indeed": {
+          "status": "done",
+          "provider": "searchPreview",
+          "findings": 3,
+          "chars": 7029
+        },
+        "clutch": {
+          "status": "done",
+          "provider": "searchPreview",
+          "findings": 3,
+          "chars": 211964
+        },
+        "g2": {
+          "status": "done",
+          "provider": "searchPreview",
+          "findings": 3,
+          "chars": 9074
+        },
+        "bbb": {
+          "status": "blocked",
+          "reason": "bot_blocked",
+          "findings": 0,
+          "chars": 0
+        },
+        "reddit": {
+          "status": "no_results",
+          "findings": 0,
+          "chars": 0
+        },
+        "linkedin": {
+          "status": "done",
+          "provider": "searchPreview",
+          "findings": 3,
+          "chars": 61967
+        },
+        "google_reviews": {
+          "status": "done",
+          "findings": 3,
+          "chars": 77218
+        },
+        "sitejabber": {
+          "status": "done",
+          "provider": "direct",
+          "findings": 1,
+          "chars": 15665
+        },
+        "trustpilot": {
+          "status": "done",
+          "provider": "jina",
+          "findings": 1,
+          "chars": 22673
+        },
+        "cfpb": {
+          "status": "no_results",
+          "findings": 0,
+          "chars": 0
+        },
+        "sec_edgar": {
+          "status": "not_applicable",
+          "findings": 0,
+          "chars": 0
+        },
+        "courtlistener": {
+          "status": "done",
+          "findings": 1,
+          "chars": 1236
+        },
+        "hacker_news": {
+          "status": "done",
+          "findings": 1,
+          "chars": 1321
+        },
+        "news": {
+          "status": "no_results",
+          "findings": 0,
+          "chars": 0
+        },
+        "app_store": {
+          "status": "done",
+          "findings": 1,
+          "chars": 1060
+        },
+        "yelp": {
+          "status": "blocked",
+          "reason": "bot_blocked",
+          "findings": 0,
+          "chars": 0
+        }
+      },
+      "checks": [
+        {
+          "source": "sec_edgar",
+          "expected": "not_applicable",
+          "actual": "not_applicable",
+          "pass": true
+        },
+        {
+          "source": "hacker_news",
+          "expected": "found",
+          "actual": "done",
+          "pass": true
+        },
+        {
+          "source": "trustpilot",
+          "expected": "found",
+          "actual": "done",
+          "pass": true
+        }
+      ]
+    },
+    {
+      "name": "JPMorgan Chase",
+      "ms": 88523,
+      "sources": {
+        "glassdoor": {
+          "status": "done",
+          "provider": "searchPreview",
+          "findings": 3,
+          "chars": 8769
+        },
+        "indeed": {
+          "status": "done",
+          "provider": "searchPreview",
+          "findings": 3,
+          "chars": 8990
+        },
+        "clutch": {
+          "status": "done",
+          "provider": "searchPreview",
+          "findings": 3,
+          "chars": 207352
+        },
+        "g2": {
+          "status": "done",
+          "provider": "searchPreview",
+          "findings": 3,
+          "chars": 13919
+        },
+        "bbb": {
+          "status": "failed",
+          "reason": "unknown",
+          "findings": 0,
+          "chars": 0
+        },
+        "reddit": {
+          "status": "done",
+          "provider": "searchPreview",
+          "findings": 1,
+          "chars": 6007
+        },
+        "linkedin": {
+          "status": "done",
+          "provider": "searchPreview",
+          "findings": 3,
+          "chars": 58971
+        },
+        "google_reviews": {
+          "status": "done",
+          "findings": 3,
+          "chars": 59631
+        },
+        "sitejabber": {
+          "status": "failed",
+          "reason": "unknown",
+          "findings": 0,
+          "chars": 0
+        },
+        "trustpilot": {
+          "status": "failed",
+          "reason": "unknown",
+          "findings": 0,
+          "chars": 0
+        },
+        "cfpb": {
+          "status": "done",
+          "findings": 1,
+          "chars": 771
+        },
+        "sec_edgar": {
+          "status": "done",
+          "findings": 1,
+          "chars": 396
+        },
+        "courtlistener": {
+          "status": "done",
+          "findings": 1,
+          "chars": 1358
+        },
+        "hacker_news": {
+          "status": "done",
+          "findings": 1,
+          "chars": 1490
+        },
+        "news": {
+          "status": "failed",
+          "reason": "rate_limited",
+          "findings": 0,
+          "chars": 0
+        },
+        "app_store": {
+          "status": "done",
+          "findings": 1,
+          "chars": 1228
+        },
+        "yelp": {
+          "status": "done",
+          "findings": 1,
+          "chars": 1033
+        }
+      },
+      "checks": [
+        {
+          "source": "cfpb",
+          "expected": "found",
+          "actual": "done",
+          "pass": true
+        },
+        {
+          "source": "sec_edgar",
+          "expected": "found",
+          "actual": "done",
+          "pass": true
+        },
+        {
+          "source": "courtlistener",
+          "expected": "found",
+          "actual": "done",
+          "pass": true
+        },
+        {
+          "source": "glassdoor",
+          "expected": "found",
+          "actual": "done",
+          "pass": true
+        }
+      ]
+    },
+    {
+      "name": "Atlassian",
+      "ms": 81699,
+      "sources": {
+        "glassdoor": {
+          "status": "done",
+          "provider": "searchPreview",
+          "findings": 3,
+          "chars": 6727
+        },
+        "indeed": {
+          "status": "done",
+          "provider": "searchPreview",
+          "findings": 3,
+          "chars": 7738
+        },
+        "clutch": {
+          "status": "done",
+          "provider": "searchPreview",
+          "findings": 3,
+          "chars": 114804
+        },
+        "g2": {
+          "status": "done",
+          "provider": "searchPreview",
+          "findings": 3,
+          "chars": 8837
+        },
+        "bbb": {
+          "status": "failed",
+          "reason": "unknown",
+          "findings": 0,
+          "chars": 0
+        },
+        "reddit": {
+          "status": "done",
+          "provider": "searchPreview",
+          "findings": 1,
+          "chars": 5950
+        },
+        "linkedin": {
+          "status": "done",
+          "provider": "searchPreview",
+          "findings": 3,
+          "chars": 229717
+        },
+        "google_reviews": {
+          "status": "done",
+          "findings": 3,
+          "chars": 27928
+        },
+        "sitejabber": {
+          "status": "failed",
+          "reason": "unknown",
+          "findings": 0,
+          "chars": 0
+        },
+        "trustpilot": {
+          "status": "failed",
+          "reason": "unknown",
+          "findings": 0,
+          "chars": 0
+        },
+        "cfpb": {
+          "status": "no_results",
+          "findings": 0,
+          "chars": 0
+        },
+        "sec_edgar": {
+          "status": "done",
+          "findings": 1,
+          "chars": 392
+        },
+        "courtlistener": {
+          "status": "done",
+          "findings": 1,
+          "chars": 1281
+        },
+        "hacker_news": {
+          "status": "done",
+          "findings": 1,
+          "chars": 1431
+        },
+        "news": {
+          "status": "failed",
+          "reason": "service_down",
+          "findings": 0,
+          "chars": 0
+        },
+        "app_store": {
+          "status": "done",
+          "findings": 1,
+          "chars": 1085
+        },
+        "yelp": {
+          "status": "blocked",
+          "reason": "bot_blocked",
+          "findings": 0,
+          "chars": 0
+        }
+      },
+      "checks": [
+        {
+          "source": "sec_edgar",
+          "expected": "found",
+          "actual": "done",
+          "pass": true
+        },
+        {
+          "source": "hacker_news",
+          "expected": "found",
+          "actual": "done",
+          "pass": true
+        },
+        {
+          "source": "g2",
+          "expected": "found",
+          "actual": "done",
+          "pass": true
+        }
+      ]
+    },
+    {
+      "name": "Robinhood",
+      "ms": 78753,
+      "sources": {
+        "glassdoor": {
+          "status": "done",
+          "provider": "searchPreview",
+          "findings": 3,
+          "chars": 8067
+        },
+        "indeed": {
+          "status": "done",
+          "provider": "searchPreview",
+          "findings": 3,
+          "chars": 8655
+        },
+        "clutch": {
+          "status": "done",
+          "provider": "searchPreview",
+          "findings": 3,
+          "chars": 93532
+        },
+        "g2": {
+          "status": "done",
+          "provider": "searchPreview",
+          "findings": 3,
+          "chars": 3584
+        },
+        "bbb": {
+          "status": "failed",
+          "reason": "unknown",
+          "findings": 0,
+          "chars": 0
+        },
+        "reddit": {
+          "status": "done",
+          "provider": "searchPreview",
+          "findings": 1,
+          "chars": 5595
+        },
+        "linkedin": {
+          "status": "done",
+          "provider": "searchPreview",
+          "findings": 3,
+          "chars": 104802
+        },
+        "google_reviews": {
+          "status": "done",
+          "findings": 3,
+          "chars": 18495
+        },
+        "sitejabber": {
+          "status": "failed",
+          "reason": "unknown",
+          "findings": 0,
+          "chars": 0
+        },
+        "trustpilot": {
+          "status": "failed",
+          "reason": "unknown",
+          "findings": 0,
+          "chars": 0
+        },
+        "cfpb": {
+          "status": "done",
+          "findings": 1,
+          "chars": 690
+        },
+        "sec_edgar": {
+          "status": "done",
+          "findings": 1,
+          "chars": 401
+        },
+        "courtlistener": {
+          "status": "done",
+          "findings": 1,
+          "chars": 1333
+        },
+        "hacker_news": {
+          "status": "done",
+          "findings": 1,
+          "chars": 1406
+        },
+        "news": {
+          "status": "failed",
+          "reason": "rate_limited",
+          "findings": 0,
+          "chars": 0
+        },
+        "app_store": {
+          "status": "done",
+          "findings": 1,
+          "chars": 1403
+        },
+        "yelp": {
+          "status": "blocked",
+          "reason": "bot_blocked",
+          "findings": 0,
+          "chars": 0
+        }
+      },
+      "checks": [
+        {
+          "source": "cfpb",
+          "expected": "found",
+          "actual": "done",
+          "pass": true
+        },
+        {
+          "source": "sec_edgar",
+          "expected": "found",
+          "actual": "done",
+          "pass": true
+        },
+        {
+          "source": "app_store",
+          "expected": "found",
+          "actual": "done",
+          "pass": true
+        },
+        {
+          "source": "reddit",
+          "expected": "found",
+          "actual": "done",
+          "pass": true
+        }
+      ]
+    },
+    {
+      "name": "Chewy",
+      "ms": 72494,
+      "sources": {
+        "glassdoor": {
+          "status": "done",
+          "provider": "searchPreview",
+          "findings": 3,
+          "chars": 6856
+        },
+        "indeed": {
+          "status": "done",
+          "provider": "searchPreview",
+          "findings": 3,
+          "chars": 8475
+        },
+        "clutch": {
+          "status": "done",
+          "provider": "searchPreview",
+          "findings": 3,
+          "chars": 20347
+        },
+        "g2": {
+          "status": "done",
+          "provider": "searchPreview",
+          "findings": 3,
+          "chars": 12064
+        },
+        "bbb": {
+          "status": "blocked",
+          "reason": "bot_blocked",
+          "findings": 0,
+          "chars": 0
+        },
+        "reddit": {
+          "status": "done",
+          "provider": "searchPreview",
+          "findings": 1,
+          "chars": 6450
+        },
+        "linkedin": {
+          "status": "done",
+          "provider": "searchPreview",
+          "findings": 3,
+          "chars": 128747
+        },
+        "google_reviews": {
+          "status": "done",
+          "findings": 2,
+          "chars": 19496
+        },
+        "sitejabber": {
+          "status": "done",
+          "provider": "direct",
+          "findings": 1,
+          "chars": 12622
+        },
+        "trustpilot": {
+          "status": "done",
+          "provider": "jina",
+          "findings": 1,
+          "chars": 14857
+        },
+        "cfpb": {
+          "status": "no_results",
+          "findings": 0,
+          "chars": 0
+        },
+        "sec_edgar": {
+          "status": "done",
+          "findings": 1,
+          "chars": 389
+        },
+        "courtlistener": {
+          "status": "done",
+          "findings": 1,
+          "chars": 1202
+        },
+        "hacker_news": {
+          "status": "done",
+          "findings": 1,
+          "chars": 1495
+        },
+        "news": {
+          "status": "failed",
+          "reason": "rate_limited",
+          "findings": 0,
+          "chars": 0
+        },
+        "app_store": {
+          "status": "done",
+          "findings": 1,
+          "chars": 1229
+        },
+        "yelp": {
+          "status": "done",
+          "findings": 1,
+          "chars": 628
+        }
+      },
+      "checks": [
+        {
+          "source": "trustpilot",
+          "expected": "found",
+          "actual": "done",
+          "pass": true
+        },
+        {
+          "source": "bbb",
+          "expected": "found",
+          "actual": "blocked",
+          "pass": false
+        },
+        {
+          "source": "sec_edgar",
+          "expected": "found",
+          "actual": "done",
+          "pass": true
+        }
+      ]
+    },
+    {
+      "name": "Gusto",
+      "ms": 77010,
+      "sources": {
+        "glassdoor": {
+          "status": "done",
+          "provider": "searchPreview",
+          "findings": 3,
+          "chars": 6604
+        },
+        "indeed": {
+          "status": "done",
+          "provider": "searchPreview",
+          "findings": 3,
+          "chars": 7860
+        },
+        "clutch": {
+          "status": "done",
+          "provider": "searchPreview",
+          "findings": 3,
+          "chars": 149771
+        },
+        "g2": {
+          "status": "done",
+          "provider": "searchPreview",
+          "findings": 3,
+          "chars": 8919
+        },
+        "bbb": {
+          "status": "failed",
+          "reason": "unknown",
+          "findings": 0,
+          "chars": 0
+        },
+        "reddit": {
+          "status": "done",
+          "provider": "searchPreview",
+          "findings": 1,
+          "chars": 5970
+        },
+        "linkedin": {
+          "status": "done",
+          "provider": "searchPreview",
+          "findings": 3,
+          "chars": 82671
+        },
+        "google_reviews": {
+          "status": "done",
+          "findings": 3,
+          "chars": 51659
+        },
+        "sitejabber": {
+          "status": "failed",
+          "reason": "unknown",
+          "findings": 0,
+          "chars": 0
+        },
+        "trustpilot": {
+          "status": "failed",
+          "reason": "unknown",
+          "findings": 0,
+          "chars": 0
+        },
+        "cfpb": {
+          "status": "no_results",
+          "findings": 0,
+          "chars": 0
+        },
+        "sec_edgar": {
+          "status": "not_applicable",
+          "findings": 0,
+          "chars": 0
+        },
+        "courtlistener": {
+          "status": "done",
+          "findings": 1,
+          "chars": 1316
+        },
+        "hacker_news": {
+          "status": "done",
+          "findings": 1,
+          "chars": 1360
+        },
+        "news": {
+          "status": "failed",
+          "reason": "rate_limited",
+          "findings": 0,
+          "chars": 0
+        },
+        "app_store": {
+          "status": "done",
+          "findings": 1,
+          "chars": 1192
+        },
+        "yelp": {
+          "status": "blocked",
+          "reason": "bot_blocked",
+          "findings": 0,
+          "chars": 0
+        }
+      },
+      "checks": [
+        {
+          "source": "sec_edgar",
+          "expected": "not_applicable",
+          "actual": "not_applicable",
+          "pass": true
+        },
+        {
+          "source": "g2",
+          "expected": "found",
+          "actual": "done",
+          "pass": true
+        },
+        {
+          "source": "glassdoor",
+          "expected": "found",
+          "actual": "done",
+          "pass": true
+        }
+      ]
+    }
+  ]
+}
