@@ -45,6 +45,8 @@ export interface SourceRunState {
   // Short human-readable note for the report's Sources table (why a source
   // was not applicable, or what a data source found).
   detail?: string;
+  // The provider that served this source (e.g. "apify", "jina").
+  provider?: string;
   updatedAt: string;
 }
 
@@ -75,4 +77,13 @@ export const DEFAULT_SOURCES = [
   "hacker_news",
   "news",
   "app_store",
+  "yelp",
 ] as const;
+
+export interface Review {
+  rating?: number;
+  title?: string;
+  text: string;
+  date?: string;
+  url?: string;
+}

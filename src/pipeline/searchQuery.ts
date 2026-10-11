@@ -9,6 +9,7 @@ const SOURCE_SITE_HINTS: Record<string, string> = {
   google_reviews: "google reviews",
   sitejabber: "site:sitejabber.com",
   trustpilot: "site:trustpilot.com",
+  yelp: "site:yelp.com",
 };
 
 export function buildQuery(

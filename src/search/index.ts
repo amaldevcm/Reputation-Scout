@@ -1,4 +1,6 @@
-import { TAVILY_API_KEY, BRAVE_API_KEY, HOSTED_SEARCH_ENABLED } from "../config.js";
+import { TAVILY_API_KEY, BRAVE_API_KEY, SERPER_API_KEY, HOSTED_SEARCH_ENABLED } from "../config.js";
+import { serperProvider } from "./serperProvider.js";
+import { hasQuota, recordUsage } from "../providers/quota.js";
 import { tavilyProvider } from "./tavilyProvider.js";
 import { braveProvider } from "./braveProvider.js";
 import { bingProvider, bingHandles } from "./bingProvider.js";
@@ -21,19 +23,20 @@ interface ChainEntry {
 }
 
 /**
- * Tried in order. Providers that need a key only join when one is set. Bing is
- * the key-free primary for plain queries (it runs locally; nobody else sees the
- * query) but cannot do site: queries, which fall to Parallel and Firecrawl. Parallel
- * and Firecrawl are hosted key-free fallbacks and can be turned off with
- * REPSCOUT_HOSTED_SEARCH=false. DuckDuckGo is last because it is the first to
- * get bot-checked.
+ * Tried in order: Tavily, Parallel, Firecrawl, Serper, Bing, DuckDuckGo. Providers
+ * that need a key only join when one is set and free-tier quota is left. Parallel
+ * and Firecrawl are hosted and key-free (turn them off with
+ * REPSCOUT_HOSTED_SEARCH=false). Bing runs locally but cannot do site: queries.
+ * DuckDuckGo is last because it is the first to get bot-checked.
  */
 const CHAIN: ChainEntry[] = [
-  { provider: tavilyProvider, enabled: () => Boolean(TAVILY_API_KEY), trustEmpty: true },
-  { provider: braveProvider, enabled: () => Boolean(BRAVE_API_KEY), trustEmpty: true },
-  { provider: bingProvider, enabled: () => true, trustEmpty: false, handles: bingHandles },
+  { provider: tavilyProvider, enabled: () => Boolean(TAVILY_API_KEY) && hasQuota("tavily"), trustEmpty: true },
   { provider: parallelProvider, enabled: () => HOSTED_SEARCH_ENABLED, trustEmpty: true },
   { provider: firecrawlProvider, enabled: () => HOSTED_SEARCH_ENABLED, trustEmpty: true },
+  { provider: serperProvider, enabled: () => Boolean(SERPER_API_KEY) && hasQuota("serper"), trustEmpty: true },
+  // Brave asks for a card, so it is not a free-tier provider, but it stays for anyone who already has a key.
+  { provider: braveProvider, enabled: () => Boolean(BRAVE_API_KEY), trustEmpty: true },
+  { provider: bingProvider, enabled: () => true, trustEmpty: false, handles: bingHandles },
   { provider: duckduckgoProvider, enabled: () => true, trustEmpty: false },
 ];
 
@@ -50,7 +53,7 @@ export function resetSearchHealth(): void {
 }
 
 function hasKeyedProvider(): boolean {
-  return Boolean(TAVILY_API_KEY || BRAVE_API_KEY);
+  return Boolean(TAVILY_API_KEY || BRAVE_API_KEY || SERPER_API_KEY);
 }
 
 /**
@@ -74,6 +77,7 @@ export async function search(query: string, count = 10): Promise<{ provider: str
 
     try {
       const results = await provider.search(query, count);
+      if (provider.name === "tavily") recordUsage("tavily");
       if (results.length > 0) return { provider: provider.name, results };
       if (trustEmpty) return { provider: provider.name, results };
       emptyFrom ??= provider.name;

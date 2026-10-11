@@ -7,10 +7,11 @@ import { MAX_FETCH_RETRIES, JINA_FALLBACK_ENABLED, HOSTED_SCRAPE_ENABLED } from 
 import { DEFAULT_UA, isBotChecked } from "./httpFetch.js";
 import { fetchViaJina } from "./jinaReader.js";
 import { fetchViaFirecrawl } from "./firecrawlReader.js";
+import { fetchViaBrightData, brightDataEnabled } from "../providers/brightdata.js";
 
 export type FetchOutcome =
   // `via` marks text fetched through a fallback reader after the direct fetch was blocked.
-  | { kind: "ok"; text: string; via?: "jina" | "firecrawl" }
+  | { kind: "ok"; text: string; via?: "jina" | "firecrawl" | "brightdata" }
   | { kind: "blocked"; reason: string }
   | { kind: "failed"; reason: string }
   | { kind: "parse_error"; reason: string }
@@ -55,17 +56,24 @@ function extractReadableText(html: string, url: string): string | null {
   return null;
 }
 
-// Tried in order after a direct fetch is blocked. Jina is on by default; the
-// Firecrawl scrape is opt-in because it can read sites whose terms forbid automation.
+// Tried in order after a direct fetch is blocked (direct, Jina, Firecrawl, Bright Data).
+// Jina is on by default; the hosted scrapes are opt-in because they can read sites
+// whose terms forbid automation.
 const FALLBACK_READERS = [
   { via: "jina", enabled: () => JINA_FALLBACK_ENABLED, read: fetchViaJina },
   { via: "firecrawl", enabled: () => HOSTED_SCRAPE_ENABLED, read: fetchViaFirecrawl },
+  { via: "brightdata", enabled: brightDataEnabled, read: fetchViaBrightData },
 ] as const;
 
-async function tryFallbackReaders(url: string): Promise<FetchOutcome | null> {
+async function tryReaders(url: string): Promise<FetchOutcome | null> {
   for (const { via, enabled, read } of FALLBACK_READERS) {
     if (!enabled()) continue;
-    const outcome = await read(url);
+    let outcome;
+    try {
+      outcome = await read(url);
+    } catch {
+      continue;
+    }
     if (!outcome) continue;
     if (outcome.kind === "not_found") return { kind: "not_found" };
     await setCached(url, outcome.text);
@@ -74,7 +82,12 @@ async function tryFallbackReaders(url: string): Promise<FetchOutcome | null> {
   return null;
 }
 
-export async function fetchPage(url: string): Promise<FetchOutcome> {
+/**
+ * Fetches a page and extracts readable text. `fallbacks: false` stops after the
+ * direct fetch, so a provider chain controls which readers run and in what order.
+ */
+export async function fetchPage(url: string, opts: { fallbacks?: boolean } = {}): Promise<FetchOutcome> {
+  const tryFallbackReaders = opts.fallbacks === false ? async () => null : tryReaders;
   const cached = await getCached(url);
   if (cached !== null) return { kind: "ok", text: cached };
 

@@ -1,5 +1,7 @@
 import { throttleHost } from "./throttle.js";
 import { DEFAULT_UA, isBotChecked } from "./httpFetch.js";
+import { FIRECRAWL_API_KEY } from "../config.js";
+import { hasQuota, recordUsage } from "../providers/quota.js";
 import { MIN_READER_TEXT_LENGTH, looksLikeNotFound, type ReaderOutcome } from "./jinaReader.js";
 
 const SCRAPE_ENDPOINT = "https://api.firecrawl.dev/v2/scrape";
@@ -21,12 +23,17 @@ interface FirecrawlScrapeResponse {
  * still blocked, or an empty page).
  */
 export async function fetchViaFirecrawl(url: string): Promise<ReaderOutcome | null> {
+  if (FIRECRAWL_API_KEY && !hasQuota("firecrawl")) return null;
   await throttleHost(FIRECRAWL_HOST);
 
   try {
     const res = await fetch(SCRAPE_ENDPOINT, {
       method: "POST",
-      headers: { "Content-Type": "application/json", "User-Agent": DEFAULT_UA },
+      headers: {
+        "Content-Type": "application/json",
+        "User-Agent": DEFAULT_UA,
+        ...(FIRECRAWL_API_KEY && { Authorization: `Bearer ${FIRECRAWL_API_KEY}` }),
+      },
       body: JSON.stringify({ url, formats: ["markdown"], onlyMainContent: true }),
       signal: AbortSignal.timeout(60_000),
     });
@@ -34,6 +41,7 @@ export async function fetchViaFirecrawl(url: string): Promise<ReaderOutcome | nu
 
     const payload = (await res.json()) as FirecrawlScrapeResponse;
     if (!payload.success) return null;
+    if (FIRECRAWL_API_KEY) recordUsage("firecrawl");
 
     if (payload.data?.metadata?.statusCode === 404) return { kind: "not_found" };
 
