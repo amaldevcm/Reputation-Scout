@@ -83,14 +83,14 @@ function buildSourcesSection(manifest: RunManifest): string {
             : s.status === "done"
               ? s.detail ?? `${s.matchedPages.length} page(s) matched`
               : s.status;
-    return `| ${s.source} | ${s.status} | ${detail} |`;
+    return `| ${s.source} | ${s.status} | ${s.provider ?? "—"} | ${detail} |`;
   });
 
   return [
     "## Sources",
     "",
-    "| Source | Status | Detail |",
-    "| --- | --- | --- |",
+    "| Source | Status | Provider | Detail |",
+    "| --- | --- | --- | --- |",
     ...rows,
     "",
     `_${summarize(manifest)}._`,

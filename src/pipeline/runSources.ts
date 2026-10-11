@@ -1,52 +1,12 @@
-import { search } from "../search/index.js";
-import { buildQuery } from "./searchQuery.js";
 import { fetchPage } from "../fetch/fetchPage.js";
-import { scoreMatch } from "./disambiguate.js";
 import { redactStructuralPII } from "../report/redact.js";
 import { updateSourceState } from "./manifest.js";
-import { RESOLVERS } from "../sources/resolvers/index.js";
+import { resolveMatchedPages } from "../sources/context.js";
+import { CHAINS } from "../sources/chains.js";
+import { runChain } from "./runChain.js";
 import { DATA_SOURCES, type DataSource } from "../sources/apis/index.js";
 import { classifyMessage, describeError, type FailureReason } from "./failure.js";
 import type { ExtractedFinding, MatchedPage, RunManifest } from "../types.js";
-
-type Resolution =
-  // `provider` is the search engine that found the pages; absent for direct-URL resolvers.
-  | { matchedPages: MatchedPage[]; provider?: string }
-  | { noResults: true }
-  | { error: string; reason: FailureReason };
-
-/**
- * Resolves candidate pages for a source either via its direct-URL resolver
- * (skipping the external search step entirely) or, when no resolver applies,
- * via the generic search provider — same as before this was added.
- */
-async function resolveMatchedPages(manifest: RunManifest, source: string): Promise<Resolution> {
-  const resolver = RESOLVERS[source];
-  if (resolver) {
-    try {
-      const resolved = await resolver(manifest.companyName, manifest.hints);
-      if (resolved !== null) {
-        return resolved.length === 0 ? { noResults: true } : { matchedPages: resolved };
-      }
-      // resolver declined (e.g. no domain hint) — fall through to search
-    } catch (err) {
-      return describeError(err);
-    }
-  }
-
-  const query = buildQuery(manifest.companyName, source, manifest.hints);
-  try {
-    const { provider, results } = await search(query);
-    if (results.length === 0) return { noResults: true };
-    const matchedPages = results.slice(0, 3).map((r) => {
-      const { confidence, matchedOn } = scoreMatch(manifest.companyName, manifest.hints, r);
-      return { url: r.url, title: r.title, confidence, matchedOn };
-    });
-    return { matchedPages, provider };
-  } catch (err) {
-    return describeError(err);
-  }
-}
 
 /**
  * Runs a source that is answered by a structured API (see sources/apis)
@@ -95,6 +55,9 @@ async function processSource(manifest: RunManifest, source: string): Promise<voi
     reason: undefined,
     detail: undefined,
   });
+
+  const chain = CHAINS[source];
+  if (chain && (await runChain(manifest, source, chain))) return;
 
   const dataSource = DATA_SOURCES[source];
   if (dataSource) {

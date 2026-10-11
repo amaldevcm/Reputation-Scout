@@ -28,5 +28,7 @@ export interface SourceContext {
 export interface ReviewProvider {
   name: string;
   enabled(): boolean;
+  /** Key into the quota tracker; lets a skipped provider be reported as quota-exhausted. */
+  quotaKey?: string;
   fetchReviews(ctx: SourceContext): Promise<ProviderOutcome>;
 }

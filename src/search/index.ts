@@ -1,6 +1,7 @@
 import { TAVILY_API_KEY, BRAVE_API_KEY, SERPER_API_KEY, HOSTED_SEARCH_ENABLED } from "../config.js";
 import { serperProvider } from "./serperProvider.js";
 import { hasQuota, recordUsage } from "../providers/quota.js";
+import { coolingDown, markFailed, resetHealth } from "../providers/health.js";
 import { tavilyProvider } from "./tavilyProvider.js";
 import { braveProvider } from "./braveProvider.js";
 import { bingProvider, bingHandles } from "./bingProvider.js";
@@ -40,16 +41,9 @@ const CHAIN: ChainEntry[] = [
   { provider: duckduckgoProvider, enabled: () => true, trustEmpty: false },
 ];
 
-// Circuit breaker: after a provider fails, later searches skip it for a while
-// instead of every source hitting the same wall. The state is process-wide, so
-// it also covers sequential runs and resume_research.
-const BLOCKED_COOLDOWN_MS = 5 * 60_000;
-const DEFAULT_COOLDOWN_MS = 60_000;
-const failedUntil = new Map<string, { until: number; error: string }>();
-
 /** Clears the circuit breaker (used by tests and by anyone who has just fixed a key). */
 export function resetSearchHealth(): void {
-  failedUntil.clear();
+  resetHealth();
 }
 
 function hasKeyedProvider(): boolean {
@@ -69,9 +63,9 @@ export async function search(query: string, count = 10): Promise<{ provider: str
   for (const { provider, enabled, trustEmpty, handles } of CHAIN) {
     if (!enabled() || (handles && !handles(query))) continue;
 
-    const down = failedUntil.get(provider.name);
-    if (down && down.until > Date.now()) {
-      failures.push(`${provider.name}: skipped, failed recently (${down.error})`);
+    const down = coolingDown(`search:${provider.name}`);
+    if (down) {
+      failures.push(`${provider.name}: skipped, failed recently (${down})`);
       continue;
     }
 
@@ -83,8 +77,7 @@ export async function search(query: string, count = 10): Promise<{ provider: str
       emptyFrom ??= provider.name;
     } catch (err) {
       const { error, reason } = describeError(err);
-      const cooldown = reason === "bot_blocked" ? BLOCKED_COOLDOWN_MS : DEFAULT_COOLDOWN_MS;
-      failedUntil.set(provider.name, { until: Date.now() + cooldown, error });
+      markFailed(`search:${provider.name}`, reason, error);
       failures.push(`${provider.name}: ${error}`);
     }
   }

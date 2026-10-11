@@ -22,15 +22,55 @@ No API key required to get started. Three sources (**BBB**, **SiteJabber**, **Tr
 Search tries providers in order and moves on when one errors, is rate-limited or is bot-checked. A provider that fails is skipped for a few minutes so later searches don't hit the same wall.
 
 1. **[Tavily](https://tavily.com/)** (`TAVILY_API_KEY`), optional. Free tier, 1,000 credits/month, no credit card required.
-2. **[Brave Search](https://brave.com/search/api/)** (`BRAVE_API_KEY`), optional. Brave now gives $5 of free credits a month but asks for a credit card at signup to confirm identity.
-3. **Bing** (no key). Scrapes Bing's HTML results locally; nobody else sees the query. It ignores the `site:` operator, so it only handles plain queries.
-4. **[Parallel Search](https://docs.parallel.ai/integrations/mcp/search-mcp)** (no key). Free anonymous hosted search that honors `site:` and returns long page excerpts. The query is sent to Parallel.
-5. **[Firecrawl](https://docs.firecrawl.dev/)** keyless search (no key). Hosted, honors `site:`, capped per IP per day (the cap isn't published). The query is sent to Firecrawl.
-6. **DuckDuckGo** (no key). Last resort; it is the first to get bot-checked.
+2. **[Parallel Search](https://docs.parallel.ai/integrations/mcp/search-mcp)** (no key). Free anonymous hosted search that honors `site:` and returns long page excerpts. The query is sent to Parallel.
+3. **[Firecrawl](https://docs.firecrawl.dev/)** search (no key needed; `FIRECRAWL_API_KEY` raises the cap). Hosted, honors `site:`, capped per IP per day on the keyless tier. The query is sent to Firecrawl.
+4. **[Serper](https://serper.dev/)** (`SERPER_API_KEY`), optional. 2,500 free searches, one-time, no credit card.
+5. **[Brave Search](https://brave.com/search/api/)** (`BRAVE_API_KEY`), optional and not free-tier: Brave asks for a credit card at signup. Kept for anyone who already has a key.
+6. **Bing** (no key). Scrapes Bing's HTML results locally; nobody else sees the query. It ignores the `site:` operator, so it only handles plain queries.
+7. **DuckDuckGo** (no key). Last resort; it is the first to get bot-checked.
 
-Set `REPSCOUT_HOSTED_SEARCH=false` to skip Parallel and Firecrawl and keep every query local. Then `site:` queries (most sources) have only DuckDuckGo left, so expect them to fail unless you set a Tavily or Brave key.
+Set `REPSCOUT_HOSTED_SEARCH=false` to skip Parallel and Firecrawl and keep every query local. Then `site:` queries (most sources) have only DuckDuckGo left, so expect them to fail unless you set a Tavily or Serper key.
 
 If no company domain is given, `research_company` looks the company up on Wikidata and uses its official website when exactly one match is found. The result says so in `resolved_domain`.
+
+### Provider chains (free tiers)
+
+Each review source tries its providers in order and stops at the first that returns usable content. Every keyed provider is optional: a missing key, a disabled flag or an exhausted quota just skips it. With no keys at all, only the keyless providers run, which matches the behavior before chains existed. A source with no enabled provider falls back to the original resolve-then-fetch path.
+
+| Source | Chain (in order) |
+| --- | --- |
+| `glassdoor`, `indeed` | apify, brightdata, firecrawl, searchPreview |
+| `g2` | apify, firecrawl, brightdata, searchPreview |
+| `trustpilot` | apify, firecrawl, jina |
+| `google_reviews` | serpapi, apify |
+| `yelp` | yelp, apify |
+| `bbb`, `sitejabber` | direct, jina, firecrawl |
+| `reddit` | searchPreview, apify |
+| `linkedin` | brightdata, searchPreview |
+| `clutch` | direct, jina, firecrawl, searchPreview |
+
+`searchPreview` reads the pages the search turned up and, where a page can't be read, uses the search engine's own excerpt. Sources not listed (the public-record sources) are unchanged. The report's Sources table shows which provider served each source.
+
+| Provider | Env var | Free allowance | Resets |
+| --- | --- | --- | --- |
+| Apify actors | `APIFY_TOKEN` | $5 usage/month | monthly |
+| Bright Data Web Unlocker | `BRIGHTDATA_API_TOKEN` + `BRIGHTDATA_ZONE` | ~5,000 requests/month | monthly |
+| Tavily | `TAVILY_API_KEY` | 1,000 credits | monthly |
+| Firecrawl | `FIRECRAWL_API_KEY` (optional) | ~500 credits | monthly |
+| SerpApi (Google Maps reviews) | `SERPAPI_KEY` | 250 searches | monthly |
+| Yelp Fusion | `YELP_API_KEY` | 5,000 calls/day | daily |
+| Serper | `SERPER_API_KEY` | 2,500 searches | one-time |
+| Parallel, Jina, Bing, DuckDuckGo | none | free | n/a |
+
+Verify allowances against each vendor's pricing page; they change.
+
+**Scraping is opt-in.** Apify, Bright Data and the Firecrawl scrape can read Glassdoor, G2, Indeed and LinkedIn, whose terms forbid automated access. They stay off until `REPSCOUT_HOSTED_SCRAPE=true`, and then the page URL (or company name) is sent to that vendor. Enabling it is your call.
+
+**Apify actors.** Defaults are pay-per-result actors from the Apify Store: `scrapifier~glassdoor-reviews-universal-scraper` (glassdoor), `reviewly~indeed-company-reviews-scraper` (indeed), `jupri~g2-explorer` (g2), `junipr~trustpilot-reviews-scraper` (trustpilot), `compass~google-maps-reviews-scraper` (google_reviews), `eunit~yelp-scraper` (yelp), `trudax~reddit-scraper-lite` (reddit). Actor input schemas change and these defaults were chosen from store listings, not exercised end to end, so override them per source with `REPSCOUT_APIFY_ACTOR_<SOURCE>` and `REPSCOUT_APIFY_INPUT_<SOURCE>` (a JSON template using `{{url}}`, `{{company}}`, `{{domain}}`, `{{max}}`).
+
+**Yelp.** The Fusion API returns at most 3 review excerpts per business, needs a `location` hint, and review access may need a plan that includes it. The report labels these as excerpts.
+
+**Quota tracking.** Billed calls are counted in `.cache/quota.json` (per provider and month/day/one-time period). A provider that has hit its limit is skipped and noted as `quota exhausted`. Limits default to the table above; override with `REPSCOUT_QUOTA_APIFY_USD`, `REPSCOUT_QUOTA_BRIGHTDATA`, `REPSCOUT_QUOTA_TAVILY`, `REPSCOUT_QUOTA_FIRECRAWL`, `REPSCOUT_QUOTA_SERPAPI`, `REPSCOUT_QUOTA_YELP`, `REPSCOUT_QUOTA_SERPER`. Apify spend is estimated from `REPSCOUT_APIFY_USD_PER_ITEM` (default 0.005). Results are cached per source, provider and company, so reruns cost nothing, and reviews per source are capped by `REPSCOUT_MAX_REVIEWS_PER_SOURCE` (default 30).
 
 ## Sources
 
@@ -78,7 +118,9 @@ Empty answers from the public-record sources (CFPB, SEC, courts, Hacker News, ne
 | `REPSCOUT_JINA_FALLBACK` | Set to `false` to disable the Jina Reader fallback |
 | `JINA_API_KEY` | Higher Jina Reader rate limit |
 | `REPSCOUT_HOSTED_SEARCH` | Set to `false` to stop using Parallel and Firecrawl for search |
-| `REPSCOUT_HOSTED_SCRAPE` | Set to `true` to let Firecrawl read pages other readers can't (opt-in) |
+| `REPSCOUT_HOSTED_SCRAPE` | Set to `true` to enable hosted scraping: Firecrawl, Apify and Bright Data (opt-in) |
+| `APIFY_TOKEN`, `BRIGHTDATA_API_TOKEN`, `BRIGHTDATA_ZONE`, `SERPAPI_KEY`, `YELP_API_KEY`, `SERPER_API_KEY`, `FIRECRAWL_API_KEY` | Optional free-tier provider keys (see Provider chains) |
+| `REPSCOUT_MAX_REVIEWS_PER_SOURCE` | Cap on reviews kept per source (default 30) |
 
 ## Adding it to a coding agent
 

@@ -18,6 +18,7 @@ async function call(params: Record<string, string>): Promise<any> {
 /** Google Maps reviews: one search to find the place, then the reviews engine (2 searches). */
 export const serpApiProvider: ReviewProvider = {
   name: "serpapi",
+  quotaKey: "serpapi",
   enabled: () => Boolean(SERPAPI_KEY) && hasQuota("serpapi"),
   async fetchReviews(ctx: SourceContext): Promise<ProviderOutcome> {
     try {

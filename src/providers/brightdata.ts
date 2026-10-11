@@ -28,6 +28,7 @@ export async function fetchViaBrightData(url: string): Promise<ReaderOutcome | n
 
 export const brightDataProvider: ReviewProvider = {
   name: "brightdata",
+  quotaKey: "brightdata",
   enabled: brightDataEnabled,
   async fetchReviews(ctx: SourceContext): Promise<ProviderOutcome> {
     const matched = (await ctx.pages()).slice(0, 3);

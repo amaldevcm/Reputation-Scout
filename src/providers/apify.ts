@@ -91,6 +91,7 @@ function toReview(item: Record<string, any>): Review | null {
 export const apifyProvider: ReviewProvider = {
   name: "apify",
   // Actors scrape sites whose terms forbid automation, so this shares the opt-in scrape flag.
+  quotaKey: "apify",
   enabled: () => Boolean(APIFY_TOKEN) && HOSTED_SCRAPE_ENABLED && hasQuota("apify"),
   async fetchReviews(ctx: SourceContext): Promise<ProviderOutcome> {
     const key = ctx.source.toUpperCase();

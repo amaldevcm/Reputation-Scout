@@ -18,6 +18,7 @@ async function get(path: string, params: Record<string, string>): Promise<Respon
 /** Yelp Fusion: business search, then reviews. Yelp returns at most 3 review excerpts. */
 export const yelpProvider: ReviewProvider = {
   name: "yelp",
+  quotaKey: "yelp",
   enabled: () => Boolean(YELP_API_KEY) && hasQuota("yelp"),
   async fetchReviews(ctx: SourceContext): Promise<ProviderOutcome> {
     // Search needs a location; without one there is nothing reliable to match on.
