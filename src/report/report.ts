@@ -128,6 +128,37 @@ function buildUnverifiedSection(manifest: RunManifest): string | null {
   return ["## ⚠ Unverified matches", "", ...lines].join("\n");
 }
 
+/**
+ * The short snapshot returned to the chat client: coverage in one line, one
+ * line per source that produced a rating or count, and what needs a manual check.
+ * The full detail stays in the saved report.
+ */
+function buildPreviewInsights(manifest: RunManifest): string {
+  const sources = Object.values(manifest.sources);
+  const done = sources.filter((s) => s.status === "done");
+  const lines = [`Coverage: ${done.length}/${sources.length} sources returned data.`];
+
+  for (const s of done) {
+    const text = s.findings.map((f) => f.text).join(" ");
+    const isData = s.source in DATA_SOURCES;
+    const unverified = s.matchedPages[0]?.confidence === "low";
+    const count = extractReviewCount(text);
+    const parts = isData
+      ? [s.source === "reddit" ? s.detail?.match(/\d+ thread\(s\)/)?.[0] : s.detail]
+      : [
+          // A rating pattern-matched from a name-only match is too often a false positive to show.
+          unverified ? null : extractRating(text),
+          count !== null && count > 0 ? `${count} reviews` : null,
+        ];
+    const signal = parts.filter(Boolean).join(", ");
+    if (signal) lines.push(`- ${s.source}: ${signal}${unverified ? " (unverified match)" : ""}`);
+  }
+
+  const manual = unresolvedSources(manifest).map((u) => u.source);
+  if (manual.length) lines.push(`Check manually: ${manual.join(", ")}.`);
+  return lines.join("\n");
+}
+
 export async function saveReport(
   manifest: RunManifest,
   options: SaveReportOptions = {}
@@ -210,9 +241,8 @@ export async function saveReport(
   const website = manifest.hints.domain ?? "not provided";
   const previewBlocks = [
     `${manifest.companyName} — ${website} — confidence: ${confidenceLevel}`,
-    summarize(manifest),
-    summaryNote ? summaryNote.replace(/^_|_$/g, "") : "",
-    truncate(bodyRedacted, PREVIEW_FINDINGS_CHAR_LIMIT) || "No findings recorded.",
+    buildPreviewInsights(manifest),
+    options.findings ? truncate(bodyRedacted, PREVIEW_FINDINGS_CHAR_LIMIT) : "",
     `Full report: ${filePath}`,
   ].filter(Boolean);
   const preview = previewBlocks.join("\n\n");
